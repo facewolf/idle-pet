@@ -76,6 +76,51 @@
             50% { transform: scale(1.2); }
             100% { transform: scale(1); opacity: 1; }
         }
+        .shimmer {
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+        .egg-rare {
+            animation: sparkle 1s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(100,200,255,0.6);
+        }
+        @keyframes sparkle {
+            0%, 100% { box-shadow: 0 0 20px rgba(100,200,255,0.4); }
+            50% { box-shadow: 0 0 40px rgba(100,200,255,0.8); }
+        }
+        .egg-legendary {
+            animation: legendaryGlow 2s ease-in-out infinite;
+            box-shadow: 0 0 50px rgba(255,215,0,0.8);
+        }
+        @keyframes legendaryGlow {
+            0%, 100% { box-shadow: 0 0 30px rgba(255,215,0,0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 60px rgba(255,215,0,1); transform: scale(1.02); }
+        }
+        .chest-shake {
+            animation: chestShake 0.5s ease-in-out;
+        }
+        @keyframes chestShake {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+        .spring-border {
+            border: 2px dashed #ff69b4 !important;
+        }
+        .quest-progress {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .quest-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            transition: width 0.3s ease;
+        }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1a1230; }
         ::-webkit-scrollbar-thumb { background: #ff6b9d; border-radius: 4px; }
@@ -142,6 +187,72 @@
         </div>
     </div>
 
+    <!-- Pet Training Modal -->
+    <div id="trainingModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4">
+            <h2 class="text-2xl font-bold mb-4">🏋️ Pet Training</h2>
+            <div id="trainingPetInfo" class="text-center mb-4"></div>
+            <div id="trainingStats" class="space-y-3"></div>
+            <button onclick="closeTrainingModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Quests Modal -->
+    <div id="questModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-2">📜 Daily Quests</h2>
+            <p class="text-gray-400 text-sm mb-4">Reset dalam: <span id="questResetTime">24:00:00</span></p>
+            <div id="questList" class="space-y-3"></div>
+            <button onclick="closeQuestModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Accessories Modal -->
+    <div id="accessoryModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4">🎀 Accessories</h2>
+            <div class="grid grid-cols-4 gap-3 mb-4" id="accessoryShop"></div>
+            <hr class="border-gray-600 my-4">
+            <h3 class="font-bold mb-2">Equip ke Pet:</h3>
+            <div id="accessoryApplySection"></div>
+            <button onclick="closeAccessoryModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Chest Opening Modal -->
+    <div id="chestModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 text-center">
+            <h2 class="text-2xl font-bold mb-4">📦 Chest Reward!</h2>
+            <div id="chestReward" class="text-6xl mb-4">🎁</div>
+            <p id="chestRewardText" class="text-xl mb-4"></p>
+            <button onclick="closeChestModal()" class="bg-purple-600 px-6 py-2 rounded-lg">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4">🏅 Leaderboard</h2>
+            <div class="flex gap-2 mb-4">
+                <button onclick="showLeaderboard('pets')" class="flex-1 bg-blue-600 px-3 py-2 rounded-lg text-sm">🐾 Pets</button>
+                <button onclick="showLeaderboard('coins')" class="flex-1 bg-yellow-600 px-3 py-2 rounded-lg text-sm">🪙 Coins</button>
+                <button onclick="showLeaderboard('prestige')" class="flex-1 bg-purple-600 px-3 py-2 rounded-lg text-sm">⭐ Prestige</button>
+            </div>
+            <div id="leaderboardList" class="space-y-2"></div>
+            <button onclick="closeLeaderboardModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Pet Fusion Modal -->
+    <div id="fusionModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4">🔥 Pet Fusion</h2>
+            <p class="text-gray-400 text-sm mb-4">Gabungkan 2 duplikat untuk evolved form!</p>
+            <div id="fusionList" class="space-y-2"></div>
+            <button onclick="closeFusionModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
     <div class="container mx-auto px-4 py-6 max-w-6xl">
         <!-- Header -->
         <header class="text-center mb-4">
@@ -152,6 +263,9 @@
                 <button onclick="openStatsModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-purple-600 transition-colors">📊 Stats</button>
                 <button onclick="openAchModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-purple-600 transition-colors">🏆 Achievements</button>
                 <button onclick="openSpinModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-yellow-600 transition-colors">🎰 Spin</button>
+                <button onclick="openQuestModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-green-600 transition-colors">📜 Quests</button>
+                <button onclick="openLeaderboardModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-blue-600 transition-colors">🏅 Ranks</button>
+                <span id="eventBanner" class="hidden text-sm bg-pink-600 px-3 py-1 rounded-full">🎉 Spring Festival!</span>
             </div>
         </header>
 
@@ -205,6 +319,45 @@
                     🪙 <span id="clickUpgradeCost">100</span>
                 </button>
             </div>
+
+            <!-- Additional Upgrades Row -->
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- Egg Value Upgrade -->
+                <div class="bg-card/60 rounded-xl p-3 flex items-center gap-3">
+                    <span class="text-2xl">🍳</span>
+                    <div class="flex-1">
+                        <p class="font-semibold text-xs">Egg Value (+10%/lvl)</p>
+                        <p class="text-xs text-gray-400">Lvl: <span id="eggValueLevel">0</span> | +<span id="eggValueBonus">0</span>%</p>
+                    </div>
+                    <button onclick="upgradeEggValue()" id="eggValueBtn" class="bg-green-600 hover:bg-green-500 px-2 py-1 rounded text-xs font-semibold">
+                        🪙 <span id="eggValueCost">200</span>
+                    </button>
+                </div>
+
+                <!-- Auto-Clicker Upgrade -->
+                <div class="bg-card/60 rounded-xl p-3 flex items-center gap-3">
+                    <span class="text-2xl">⚡</span>
+                    <div class="flex-1">
+                        <p class="font-semibold text-xs">Auto-Click (+1/s/lvl)</p>
+                        <p class="text-xs text-gray-400">Lvl: <span id="autoClickLevel">0</span> | <span id="autoClickRate">0</span>/s</p>
+                    </div>
+                    <button onclick="upgradeAutoClick()" id="autoClickBtn" class="bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded text-xs font-semibold">
+                        🪙 <span id="autoClickCost">500</span>
+                    </button>
+                </div>
+
+                <!-- Luck Upgrade -->
+                <div class="bg-card/60 rounded-xl p-3 flex items-center gap-3">
+                    <span class="text-2xl">🍀</span>
+                    <div class="flex-1">
+                        <p class="font-semibold text-xs">Luck (+2%/lvl)</p>
+                        <p class="text-xs text-gray-400">Lvl: <span id="luckLevel">0</span> | +<span id="luckBonus">0</span>% rare</p>
+                    </div>
+                    <button onclick="upgradeLuck()" id="luckBtn" class="bg-pink-600 hover:bg-pink-500 px-2 py-1 rounded text-xs font-semibold">
+                        🪙 <span id="luckCost">300</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Sell Tiers -->
@@ -227,6 +380,38 @@
                     <p class="text-xs text-gray-400 mt-1">VIP (lvl 25+)</p>
                 </div>
             </div>
+        </div>
+
+        <!-- Lucky Chest Section -->
+        <div class="bg-card/60 backdrop-blur rounded-xl p-4 mb-6 border border-amber-500/20">
+            <h3 class="font-bold mb-3 flex items-center gap-2">📦 Lucky Chest</h3>
+            <div class="grid grid-cols-3 gap-3 text-center text-sm">
+                <div class="bg-amber-900/30 rounded-lg p-3 border border-amber-500/30">
+                    <p class="text-3xl mb-1">🪵</p>
+                    <p class="font-semibold">Wooden</p>
+                    <p class="text-xs text-gray-400">100 🪙</p>
+                    <button onclick="openChest('wooden')" class="mt-2 bg-amber-600 hover:bg-amber-500 px-3 py-1 rounded text-xs font-semibold w-full">
+                        Open
+                    </button>
+                </div>
+                <div class="bg-gray-400/20 rounded-lg p-3 border border-gray-400/30">
+                    <p class="text-3xl mb-1">🥈</p>
+                    <p class="font-semibold">Silver</p>
+                    <p class="text-xs text-gray-400">500 🪙</p>
+                    <button onclick="openChest('silver')" class="mt-2 bg-gray-500 hover:bg-gray-400 px-3 py-1 rounded text-xs font-semibold w-full">
+                        Open
+                    </button>
+                </div>
+                <div class="bg-yellow-900/30 rounded-lg p-3 border border-yellow-500/30">
+                    <p class="text-3xl mb-1">🏆</p>
+                    <p class="font-semibold">Golden</p>
+                    <p class="text-xs text-gray-400">2000 🪙</p>
+                    <button onclick="openChest('golden')" class="mt-2 bg-yellow-600 hover:bg-yellow-500 px-3 py-1 rounded text-xs font-semibold w-full">
+                        Open
+                    </button>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2 text-center">Cooldown: <span id="chestCooldown">Ready!</span></p>
         </div>
 
         <!-- Shop Section -->
@@ -292,6 +477,15 @@
             </div>
         </div>
 
+        <!-- Pet Fusion Section -->
+        <div class="bg-card/60 backdrop-blur rounded-2xl p-5 mb-6 border border-orange-500/20">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">🔥 Pet Fusion</h2>
+            <p class="text-sm text-gray-400 mb-3">Gabungkan 2 duplikat untuk evolved form!</p>
+            <div id="fusionSection" class="text-center text-gray-500 py-4">
+                Tidak ada duplikat untuk difusion
+            </div>
+        </div>
+
         <!-- Prestige Section -->
         <div class="bg-gradient-to-r from-purple-900/60 to-pink-900/60 backdrop-blur rounded-2xl p-5 mb-6 border border-purple-500/30">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -313,6 +507,12 @@
         <div class="mb-6 text-center">
             <button onclick="checkDailyReward()" id="dailyBtn" class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 rounded-xl font-bold hover:scale-105 transition-transform">
                 🎁 Daily Reward (<span id="dailyStatus">Claim!</span>)
+            </button>
+            <button onclick="openAccessoryModal()" class="ml-2 bg-gradient-to-r from-pink-600 to-purple-600 px-6 py-3 rounded-xl font-bold hover:scale-105 transition-transform">
+                🎀 Accessories
+            </button>
+            <button onclick="toggleEvent()" id="eventBtn" class="ml-2 bg-gradient-to-r from-pink-600 to-rose-600 px-6 py-3 rounded-xl font-bold hover:scale-105 transition-transform hidden">
+                🎉 Activate Spring Event
             </button>
         </div>
 
@@ -352,6 +552,33 @@ const ACHIEVEMENTS = [
     { id: 'prestige1', name: 'First Reset', desc: 'Lakukan prestige pertama', icon: '🔄', check: s => s.prestige.points >= 1, reward: 1000 }
 ];
 
+const ACCESSORIES = [
+    { id: '🎀', name: 'Ribbon', cost: 100 },
+    { id: '👑', name: 'Crown', cost: 300 },
+    { id: '🎩', name: 'Hat', cost: 250 },
+    { id: '🕶️', name: 'Glasses', cost: 200 },
+    { id: '🦋', name: 'Wings', cost: 150 },
+    { id: '🌟', name: 'Star', cost: 500 },
+    { id: '💎', name: 'Gem', cost: 400 },
+    { id: '🔮', name: 'Crystal', cost: 350 }
+];
+
+const QUEST_TEMPLATES = [
+    { type: 'click', desc: 'Klik {n} kali', targets: [100, 250, 500, 1000], reward: [50, 100, 200, 400] },
+    { type: 'sellPremium', desc: 'Jual {n} telur tier Premium', targets: [5, 10, 20], reward: [100, 200, 400] },
+    { type: 'collectPet', desc: 'Kumpulkan {n} hewan baru', targets: [1, 2, 3], reward: [100, 200, 400] },
+    { type: 'earnCoins', desc: 'Earn {n} coins dari penjualan', targets: [100, 500, 1000], reward: [50, 150, 300] },
+    { type: 'openChest', desc: 'Buka {n} chest', targets: [1, 3, 5], reward: [100, 300, 500] }
+];
+
+const SPRING_PETS = ['🦋', '🌸', '🐰'];
+
+const CHEST_REWARDS = {
+    wooden: { eggs: [50, 200], coinChance: 0.1, coinAmount: [10, 50], rareChance: 0 },
+    silver: { eggs: [200, 1000], coinChance: 0.3, coinAmount: [50, 200], rareChance: 0.05 },
+    golden: { eggs: [1000, 5000], coinChance: 0.5, coinAmount: [200, 1000], rareChance: 0.15 }
+};
+
 let state = {
     eggs: 0, coins: 0, pets: [], petCounts: {},
     owned: { incubator: 0, hatchery: 0, petCenter: 0 },
@@ -361,7 +588,23 @@ let state = {
     lastDaily: 0, dailyStreak: 0,
     lastSpin: 0,
     stats: { totalClicks: 0, totalCoinsEarned: 0, totalSpins: 0 },
-    achievements: []
+    achievements: [],
+    // New features state
+    petEvolution: {}, // { "🐶": 2 } = rare version
+    petTraining: {}, // { "🐶": { speed: 0, luck: 0, value: 0 } }
+    petAccessory: {}, // { "🐶": "🎀" }
+    accessories: [], // owned accessories
+    quests: [],
+    lastQuestReset: 0,
+    questProgress: {}, // { questId: currentProgress }
+    questsCompleted: 0,
+    eggValueLevel: 0,
+    eggValueBonus: 0,
+    autoClickLevel: 0,
+    luckLevel: 0,
+    luckBonus: 0,
+    event: { active: false, startTime: 0, type: "" },
+    lastChestOpen: 0
 };
 
 function formatNumber(n) {
@@ -379,9 +622,27 @@ function showToast(msg) {
     setTimeout(() => toast.classList.add('hidden'), 2500);
 }
 
-function showClickEffect(amount) {
+function getEggType() {
+    const roll = Math.random() * 100;
+    const luckBonus = state.luckLevel * 2 + getTotalLuckBonus();
+    if (roll < 5 + luckBonus * 0.1) return 'legendary';
+    if (roll < 25 + luckBonus * 0.3) return 'rare';
+    return 'common';
+}
+
+function getEggAmount(type) {
+    const mult = state.event.active ? 2 : 1;
+    if (type === 'legendary') return 10 * mult;
+    if (type === 'rare') return 3 * mult;
+    return 1 * mult;
+}
+
+function showClickEffect(amount, type) {
     const effect = document.getElementById('clickEffect');
-    effect.textContent = '+' + amount + ' 🥚';
+    let icon = '🥚';
+    if (type === 'rare') icon = '🥚✨';
+    if (type === 'legendary') icon = '🌟🥚';
+    effect.innerHTML = '+' + Math.floor(amount) + ' ' + icon;
     effect.style.opacity = '1';
     effect.style.top = '-20px';
     setTimeout(() => { effect.style.opacity = '0'; effect.style.top = '-40px'; }, 600);
@@ -389,11 +650,18 @@ function showClickEffect(amount) {
 
 // Core functions
 function clickEgg() {
-    state.eggs += state.clickPower;
+    const eggType = getEggType();
+    const amount = getEggAmount(eggType) * (1 + state.eggValueLevel * 0.1);
+    state.eggs += amount;
     state.stats.totalClicks++;
-    showClickEffect(state.clickPower);
-    document.getElementById('mainEgg').classList.add('shake');
-    setTimeout(() => document.getElementById('mainEgg').classList.remove('shake'), 200);
+    showClickEffect(Math.floor(amount), eggType);
+    const egg = document.getElementById('mainEgg');
+    egg.classList.remove('shake', 'egg-rare', 'egg-legendary');
+    if (eggType !== 'common') egg.classList.add(eggType === 'legendary' ? 'egg-legendary' : 'egg-rare');
+    setTimeout(() => egg.classList.remove('egg-rare', 'egg-legendary'), 500);
+    egg.classList.add('shake');
+    setTimeout(() => egg.classList.remove('shake'), 200);
+    checkQuestProgress('click');
     checkAchievements();
     updateUI();
 }
@@ -437,21 +705,30 @@ function upgradeClick() {
 // Sell eggs with tier support
 function sellEggs() {
     const level = state.clickLevel;
+    let coinsEarned = 0;
     if (state.eggs >= 10000 && level >= 25) {
         state.eggs -= 10000;
-        state.coins += 2000;
-        state.stats.totalCoinsEarned += 2000;
-        showToast('💰 VIP Sell: 10K 🥚 → 2000 🪙');
+        coinsEarned = 2000 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        checkQuestProgress('sellPremium');
+        checkQuestProgress('earnCoins', coinsEarned);
+        showToast('💰 VIP Sell: 10K 🥚 → ' + Math.floor(coinsEarned) + ' 🪙');
     } else if (state.eggs >= 1000 && level >= 10) {
         state.eggs -= 1000;
-        state.coins += 150;
-        state.stats.totalCoinsEarned += 150;
-        showToast('💰 Premium Sell: 1K 🥚 → 150 🪙');
+        coinsEarned = 150 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        checkQuestProgress('sellPremium');
+        checkQuestProgress('earnCoins', coinsEarned);
+        showToast('💰 Premium Sell: 1K 🥚 → ' + Math.floor(coinsEarned) + ' 🪙');
     } else if (state.eggs >= 100) {
         state.eggs -= 100;
-        state.coins += 10;
-        state.stats.totalCoinsEarned += 10;
-        showToast('💰 Basic Sell: 100 🥚 → 10 🪙');
+        coinsEarned = 10 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        checkQuestProgress('earnCoins', coinsEarned);
+        showToast('💰 Basic Sell: 100 🥚 → ' + Math.floor(coinsEarned) + ' 🪙');
     } else {
         showToast('❌ Butuh minimal 100 telur!');
         return;
@@ -514,6 +791,464 @@ function spawnPet() {
         renderCollection();
         updateTradeSection();
         checkAchievements();
+    }
+}
+
+function spawnPet() {
+    let pool = PETS;
+    if (state.event.active) pool = [...PETS, ...SPRING_PETS];
+    const available = pool.filter(p => !state.pets.includes(p) || state.petCounts[p] < 3);
+    if (available.length > 0) {
+        const newPet = available[Math.floor(Math.random() * available.length)];
+        if (!state.pets.includes(newPet)) state.pets.push(newPet);
+        state.petCounts[newPet] = (state.petCounts[newPet] || 0) + 1;
+        if (!state.petTraining[newPet]) state.petTraining[newPet] = { speed: 0, luck: 0, value: 0 };
+        showToast('🎉 Hewan baru: ' + newPet);
+        checkQuestProgress('collectPet');
+        renderCollection();
+        updateTradeSection();
+        updateFusionSection();
+        checkAchievements();
+    }
+}
+
+function getTotalLuckBonus() {
+    let bonus = 0;
+    Object.values(state.petTraining).forEach(t => bonus += t.luck * 2);
+    return bonus;
+}
+
+function getSpawnRate() {
+    let rate = state.owned.petCenter * 0.02;
+    Object.values(state.petTraining).forEach(t => rate *= (1 - t.speed * 0.05));
+    return rate;
+}
+
+// ============== NEW UPGRADES ==============
+function getEggValueUpgradeCost() { return Math.floor(200 * Math.pow(1.5, state.eggValueLevel)); }
+function getAutoClickUpgradeCost() { return Math.floor(500 * Math.pow(1.6, state.autoClickLevel)); }
+function getLuckUpgradeCost() { return Math.floor(300 * Math.pow(1.5, state.luckLevel)); }
+
+function upgradeEggValue() {
+    const cost = getEggValueUpgradeCost();
+    if (state.coins >= cost && state.eggValueLevel < 30) {
+        state.coins -= cost;
+        state.eggValueLevel++;
+        state.eggValueBonus = state.eggValueLevel * 10;
+        showToast('🍳 Egg Value +10%!');
+        updateUI();
+    }
+}
+
+function upgradeAutoClick() {
+    const cost = getAutoClickUpgradeCost();
+    if (state.coins >= cost && state.autoClickLevel < 20) {
+        state.coins -= cost;
+        state.autoClickLevel++;
+        showToast('⚡ Auto-Click +1/s!');
+        updateUI();
+    }
+}
+
+function upgradeLuck() {
+    const cost = getLuckUpgradeCost();
+    if (state.coins >= cost && state.luckLevel < 25) {
+        state.coins -= cost;
+        state.luckLevel++;
+        state.luckBonus = state.luckLevel * 2;
+        showToast('🍀 Luck +2%!');
+        updateUI();
+    }
+}
+
+// ============== PET TRAINING ==============
+let selectedPetForTraining = null;
+
+function openTrainingModal(pet) {
+    selectedPetForTraining = pet;
+    const info = document.getElementById('trainingPetInfo');
+    const stats = document.getElementById('trainingStats');
+    const t = state.petTraining[pet] || { speed: 0, luck: 0, value: 0 };
+    info.innerHTML = '<span class="text-5xl">' + pet + '</span><p class="text-sm text-gray-400">Klik untuk train stat</p>';
+    stats.innerHTML = `
+        <div class="flex items-center justify-between bg-blue-900/30 p-3 rounded-lg">
+            <div><span class="font-bold">⚡ Speed</span><br><span class="text-xs text-gray-400">Spawn lebih cepat</span></div>
+            <div class="text-right">
+                <span class="text-xl font-bold">${t.speed}/10</span>
+                <button onclick="trainStat('${pet}', 'speed')" class="block mt-1 bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-xs" ${t.speed >= 10 ? 'disabled' : ''}>
+                    🪙 ${50 * (t.speed + 1)}
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center justify-between bg-pink-900/30 p-3 rounded-lg">
+            <div><span class="font-bold">🍀 Luck</span><br><span class="text-xs text-gray-400">+2% rare per level</span></div>
+            <div class="text-right">
+                <span class="text-xl font-bold">${t.luck}/10</span>
+                <button onclick="trainStat('${pet}', 'luck')" class="block mt-1 bg-pink-600 hover:bg-pink-500 px-3 py-1 rounded text-xs" ${t.luck >= 10 ? 'disabled' : ''}>
+                    🪙 ${50 * (t.luck + 1)}
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center justify-between bg-green-900/30 p-3 rounded-lg">
+            <div><span class="font-bold">💰 Value</span><br><span class="text-xs text-gray-400">+10% sell value</span></div>
+            <div class="text-right">
+                <span class="text-xl font-bold">${t.value}/10</span>
+                <button onclick="trainStat('${pet}', 'value')" class="block mt-1 bg-green-600 hover:bg-green-500 px-3 py-1 rounded text-xs" ${t.value >= 10 ? 'disabled' : ''}>
+                    🪙 ${50 * (t.value + 1)}
+                </button>
+            </div>
+        </div>
+    `;
+    document.getElementById('trainingModal').classList.remove('hidden');
+}
+
+function closeTrainingModal() { document.getElementById('trainingModal').classList.add('hidden'); }
+
+function trainStat(pet, stat) {
+    const t = state.petTraining[pet] || { speed: 0, luck: 0, value: 0 };
+    const cost = 50 * (t[stat] + 1);
+    if (t[stat] < 10 && state.coins >= cost) {
+        state.coins -= cost;
+        t[stat]++;
+        state.petTraining[pet] = t;
+        showToast('🏋️ ' + stat.charAt(0).toUpperCase() + stat.slice(1) + ' trained!');
+        openTrainingModal(pet);
+        updateUI();
+    }
+}
+
+// ============== PET FUSION ==============
+function getEvolutionSuffix(level) {
+    if (level === 0) return '';
+    if (level === 1) return '+1';
+    if (level === 2) return '+2';
+    if (level >= 3) return '+3';
+}
+
+function getEvolutionBorder(level) {
+    if (level === 0) return 'border-purple-500/30';
+    if (level === 1) return 'border-green-500/50';
+    if (level === 2) return 'border-purple-500/50';
+    return 'border-yellow-500/50';
+}
+
+function updateFusionSection() {
+    const duplicates = Object.entries(state.petCounts).filter(([p, c]) => c >= 2);
+    const section = document.getElementById('fusionSection');
+    if (duplicates.length === 0) {
+        section.innerHTML = '<p class="text-gray-500">Tidak ada duplikat untuk difusion</p>';
+        return;
+    }
+    section.innerHTML = duplicates.map(([pet, count]) => {
+        const evoLevel = state.petEvolution[pet] || 0;
+        const nextEvo = evoLevel >= 3 ? 'MAX' : '🔥 Fuse';
+        const petDisplay = pet + getEvolutionSuffix(evoLevel);
+        return `
+            <div class="flex items-center justify-between bg-orange-900/30 rounded-lg p-2 mb-2">
+                <span class="text-2xl">${petDisplay}</span>
+                <span class="text-sm text-gray-400">x${count} ${getEvolutionSuffix(evoLevel) ? '(' + getEvolutionSuffix(evoLevel) + ')' : '(Base)'}</span>
+                <button onclick="fusePet('${pet}')" class="bg-orange-600 hover:bg-orange-500 px-3 py-1 rounded text-sm" ${evoLevel >= 3 ? 'disabled' : ''}>
+                    ${nextEvo} (need 2)
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function fusePet(pet) {
+    const evoLevel = state.petEvolution[pet] || 0;
+    if (evoLevel >= 3 || state.petCounts[pet] < 2) return;
+    state.petCounts[pet] -= 2;
+    state.petEvolution[pet] = evoLevel + 1;
+    showToast('🔥 ' + pet + ' evolved to ' + pet + getEvolutionSuffix(evoLevel + 1) + '!');
+    if (state.petCounts[pet] === 0) {
+        state.pets = state.pets.filter(p => p !== pet);
+        delete state.petCounts[pet];
+    }
+    updateFusionSection();
+    renderCollection();
+    updateTradeSection();
+    checkAchievements();
+}
+
+function closeFusionModal() { document.getElementById('fusionModal').classList.add('hidden'); }
+function openFusionModal() {
+    updateFusionSection();
+    document.getElementById('fusionModal').classList.remove('hidden');
+}
+
+// ============== PET ACCESSORIES ==============
+function openAccessoryModal() {
+    const shop = document.getElementById('accessoryShop');
+    shop.innerHTML = ACCESSORIES.map(acc => {
+        const owned = state.accessories.includes(acc.id);
+        return `
+            <div class="text-center p-2 rounded-lg ${owned ? 'bg-green-900/30' : 'bg-gray-800/30'}">
+                <span class="text-2xl">${acc.id}</span>
+                <p class="text-xs">${acc.name}</p>
+                ${owned ? '<span class="text-xs text-green-400">Owned</span>' :
+                    `<button onclick="buyAccessory('${acc.id}')" class="text-xs bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded mt-1">🪙 ${acc.cost}</button>`}
+            </div>
+        `;
+    }).join('');
+    updateAccessoryApplySection();
+    document.getElementById('accessoryModal').classList.remove('hidden');
+}
+
+function closeAccessoryModal() { document.getElementById('accessoryModal').classList.add('hidden'); }
+
+function buyAccessory(accId) {
+    const acc = ACCESSORIES.find(a => a.id === accId);
+    if (!acc || state.accessories.includes(accId) || state.coins < acc.cost) return;
+    state.coins -= acc.cost;
+    state.accessories.push(accId);
+    showToast('🎀 Dibeli ' + acc.name + '!');
+    openAccessoryModal();
+    updateUI();
+}
+
+function updateAccessoryApplySection() {
+    const section = document.getElementById('accessoryApplySection');
+    if (state.pets.length === 0) {
+        section.innerHTML = '<p class="text-gray-500">Kumpulkan hewan dulu!</p>';
+        return;
+    }
+    section.innerHTML = '<div class="grid grid-cols-4 gap-2">' + state.pets.map(pet => {
+        const current = state.petAccessory[pet] || '';
+        const accList = state.accessories.map(acc => {
+            const sel = current === acc ? 'bg-yellow-600' : 'bg-gray-600';
+            return `<button onclick="equipAccessory('${pet}', '${acc}')" class="${sel} px-2 py-1 rounded text-lg" ${current === acc ? 'disabled' : ''}>${acc}</button>`;
+        }).join('');
+        return `<div class="text-center p-2 bg-gray-800/30 rounded-lg">
+            <span class="text-2xl">${pet}${state.petEvolution[pet] ? getEvolutionSuffix(state.petEvolution[pet]) : ''}</span>
+            ${current ? `<span class="text-lg">${current}</span>` : ''}
+            <div class="flex gap-1 mt-1 justify-center flex-wrap">${accList}</div>
+            ${current ? `<button onclick="unequipAccessory('${pet}')" class="text-xs text-red-400 mt-1">Lepas</button>` : ''}
+        </div>`;
+    }).join('') + '</div>';
+}
+
+function equipAccessory(pet, accId) {
+    state.petAccessory[pet] = accId;
+    showToast('🎀 ' + pet + ' equipped ' + accId + '!');
+    openAccessoryModal();
+    renderCollection();
+}
+
+function unequipAccessory(pet) {
+    delete state.petAccessory[pet];
+    openAccessoryModal();
+    renderCollection();
+}
+
+// ============== LUCKY CHESTS ==============
+function getChestCost(type) {
+    return { wooden: 100, silver: 500, golden: 2000 }[type];
+}
+
+function openChest(type) {
+    const cost = getChestCost(type);
+    if (state.coins < cost) { showToast('❌ Butuh ' + cost + ' 🪙'); return; }
+    const now = Date.now();
+    if (now - state.lastChestOpen < 5000) { showToast('⏰ Tunggu 5 detik!'); return; }
+    state.coins -= cost;
+    state.lastChestOpen = now;
+    checkQuestProgress('openChest');
+
+    const chest = document.getElementById('spinWheel');
+    chest.classList.add('chest-shake');
+    setTimeout(() => chest.classList.remove('chest-shake'), 500);
+
+    const rewards = CHEST_REWARDS[type];
+    const eggs = Math.floor(Math.random() * (rewards.eggs[1] - rewards.eggs[0] + 1)) + rewards.eggs[0];
+    let coinBonus = 0;
+    let pet = null;
+    let resultText = '📦 ';
+
+    state.eggs += eggs;
+    resultText += '+' + eggs + ' 🥚';
+
+    if (Math.random() < rewards.coinChance) {
+        coinBonus = Math.floor(Math.random() * (rewards.coinAmount[1] - rewards.coinAmount[0] + 1)) + rewards.coinAmount[0];
+        state.coins += coinBonus;
+        state.stats.totalCoinsEarned += coinBonus;
+        resultText += ' +' + coinBonus + ' 🪙';
+    }
+
+    if (Math.random() < rewards.rareChance) {
+        const pool = type === 'golden' ? [...PETS, ...SPRING_PETS] : PETS;
+        const newPet = pool[Math.floor(Math.random() * pool.length)];
+        if (!state.pets.includes(newPet)) state.pets.push(newPet);
+        state.petCounts[newPet] = (state.petCounts[newPet] || 0) + 1;
+        if (!state.petTraining[newPet]) state.petTraining[newPet] = { speed: 0, luck: 0, value: 0 };
+        pet = newPet;
+        resultText += ' +' + newPet + ' (RARE!)';
+    }
+
+    const rewardIcon = type === 'wooden' ? '🪵' : type === 'silver' ? '🥈' : '🏆';
+    document.getElementById('chestReward').textContent = rewardIcon;
+    document.getElementById('chestRewardText').textContent = resultText;
+    document.getElementById('chestModal').classList.remove('hidden');
+
+    checkAchievements();
+    renderCollection();
+    updateUI();
+}
+
+function closeChestModal() { document.getElementById('chestModal').classList.add('hidden'); }
+
+// ============== DAILY QUESTS ==============
+function generateQuests() {
+    const now = Date.now();
+    const hoursSinceReset = (now - state.lastQuestReset) / (1000 * 60 * 60);
+    if (hoursSinceReset >= 24 || state.quests.length === 0) {
+        state.quests = [];
+        state.questProgress = {};
+        for (let i = 0; i < 3; i++) {
+            const template = QUEST_TEMPLATES[Math.floor(Math.random() * QUEST_TEMPLATES.length)];
+            const diffIndex = Math.min(Math.floor(Math.random() * 3), template.targets.length - 1);
+            state.quests.push({
+                id: 'q' + i + '_' + now,
+                type: template.type,
+                desc: template.desc.replace('{n}', template.targets[diffIndex]),
+                target: template.targets[diffIndex],
+                reward: template.reward[diffIndex],
+                claimed: false
+            });
+            state.questProgress['q' + i + '_' + now] = 0;
+        }
+        state.lastQuestReset = now;
+    }
+}
+
+function checkQuestProgress(type, value) {
+    state.quests.forEach(q => {
+        if (q.type === type && !q.claimed) {
+            if (type === 'earnCoins' && value) {
+                state.questProgress[q.id] = (state.questProgress[q.id] || 0) + value;
+            } else {
+                state.questProgress[q.id] = (state.questProgress[q.id] || 0) + 1;
+            }
+        }
+    });
+}
+
+function openQuestModal() {
+    generateQuests();
+    const list = document.getElementById('questList');
+    list.innerHTML = state.quests.map(q => {
+        const progress = state.questProgress[q.id] || 0;
+        const pct = Math.min(100, Math.floor((progress / q.target) * 100));
+        const done = progress >= q.target && !q.claimed;
+        return `
+            <div class="bg-card/80 rounded-lg p-3 border ${done ? 'border-green-500/50' : 'border-gray-600/30'}">
+                <div class="flex justify-between mb-2">
+                    <span class="font-semibold text-sm">${q.desc}</span>
+                    <span class="text-yellow-300 text-sm">🪙 ${q.reward}</span>
+                </div>
+                <div class="quest-progress mb-2">
+                    <div class="quest-progress-bar" style="width:${pct}%"></div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400">${progress}/${q.target}</span>
+                    ${done ? `<button onclick="claimQuest('${q.id}')" class="bg-green-600 hover:bg-green-500 px-3 py-1 rounded text-sm font-bold">Claim!</button>` :
+                        `<span class="text-xs text-gray-500">In Progress</span>`}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Update reset timer
+    const now = Date.now();
+    const secsLeft = Math.max(0, 24 * 60 * 60 - (now - state.lastQuestReset) / 1000);
+    const hrs = Math.floor(secsLeft / 3600);
+    const mins = Math.floor((secsLeft % 3600) / 60);
+    const secs = Math.floor(secsLeft % 60);
+    document.getElementById('questResetTime').textContent = hrs + ':' + mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
+
+    document.getElementById('questModal').classList.remove('hidden');
+}
+
+function closeQuestModal() { document.getElementById('questModal').classList.add('hidden'); }
+
+function claimQuest(qId) {
+    const q = state.quests.find(x => x.id === qId);
+    if (!q || q.claimed || state.questProgress[qId] < q.target) return;
+    q.claimed = true;
+    state.coins += q.reward;
+    state.stats.totalCoinsEarned += q.reward;
+    state.questsCompleted++;
+    showToast('📜 Quest complete! +' + q.reward + ' 🪙');
+    openQuestModal();
+    updateUI();
+}
+
+// ============== LEADERBOARD ==============
+function getLeaderboardKey(type) { return 'idlePetLeaderboard_' + type; }
+
+function updateLeaderboard(type, value) {
+    const key = getLeaderboardKey(type);
+    let lb = JSON.parse(localStorage.getItem(key) || '[]');
+    const playerId = 'You';
+    const existing = lb.findIndex(e => e.name === playerId);
+    if (existing >= 0) {
+        if (value > lb[existing].score) lb[existing].score = value;
+    } else {
+        lb.push({ name: playerId, score: value });
+    }
+    lb.sort((a, b) => b.score - a.score);
+    lb = lb.slice(0, 10);
+    localStorage.setItem(key, JSON.stringify(lb));
+}
+
+function showLeaderboard(type) {
+    const key = getLeaderboardKey(type);
+    let lb = JSON.parse(localStorage.getItem(key) || '[]');
+    const list = document.getElementById('leaderboardList');
+    const icon = type === 'pets' ? '🐾' : type === 'coins' ? '🪙' : '⭐';
+    const title = type === 'pets' ? 'Most Pets' : type === 'coins' ? 'Most Coins' : 'Highest Prestige';
+    if (lb.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center py-4">Belum ada data. Main dulu!</p>';
+    } else {
+        list.innerHTML = '<h3 class="font-bold mb-2">' + icon + ' ' + title + '</h3>' + lb.map((e, i) => {
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
+            const highlight = e.name === 'You' ? 'bg-yellow-900/30' : '';
+            return '<div class="flex justify-between p-2 rounded-lg ' + highlight + '"><span>' + medal + ' ' + e.name + '</span><span class="font-bold">' + formatNumber(e.score) + '</span></div>';
+        }).join('');
+    }
+}
+
+function openLeaderboardModal() {
+    showLeaderboard('pets');
+    document.getElementById('leaderboardModal').classList.remove('hidden');
+}
+
+function closeLeaderboardModal() { document.getElementById('leaderboardModal').classList.add('hidden'); }
+
+// ============== SEASONAL EVENTS ==============
+function toggleEvent() {
+    if (!state.event.active) {
+        state.event = { active: true, startTime: Date.now(), type: 'spring' };
+        document.getElementById('eventBanner').classList.remove('hidden');
+        document.getElementById('eventBtn').classList.add('hidden');
+        showToast('🎉 Spring Festival Activated! 2x rewards!');
+    } else {
+        state.event.active = false;
+        document.getElementById('eventBanner').classList.add('hidden');
+        document.getElementById('eventBtn').classList.remove('hidden');
+        showToast('Event ended');
+    }
+    updateUI();
+}
+
+function checkEventExpiry() {
+    if (state.event.active && state.event.startTime) {
+        const daysPassed = (Date.now() - state.event.startTime) / (1000 * 60 * 60 * 24);
+        if (daysPassed >= 7) {
+            state.event.active = false;
+            document.getElementById('eventBanner').classList.add('hidden');
+            document.getElementById('eventBtn').classList.remove('hidden');
+        }
     }
 }
 
@@ -677,6 +1412,10 @@ function checkAchievements() {
             showToast('🏆 Achievement: ' + ach.name + ' +' + ach.reward + ' 🪙');
         }
     });
+    // Update leaderboards
+    updateLeaderboard('pets', state.pets.length);
+    updateLeaderboard('coins', state.stats.totalCoinsEarned);
+    updateLeaderboard('prestige', state.prestige.points);
 }
 
 function openAchModal() {
@@ -712,13 +1451,24 @@ function gameTick() {
     const dt = (now - lastTick) / 1000;
     lastTick = now;
 
-    state.eggs += getEggRate() * dt;
-    state.coins += getCoinRate() * dt;
+    const eventMult = state.event.active ? 2 : 1;
+    state.eggs += getEggRate() * dt * eventMult;
+    state.coins += getCoinRate() * dt * eventMult;
 
-    if (state.owned.petCenter > 0 && Math.random() < state.owned.petCenter * 0.02 * dt) {
-        spawnPet();
+    // Auto-clicker
+    if (state.autoClickLevel > 0) {
+        state.eggs += state.autoClickLevel * dt * (1 + state.eggValueLevel * 0.1);
     }
 
+    // Pet spawn with luck bonus
+    if (state.owned.petCenter > 0) {
+        const luckBonus = 1 + (state.luckLevel * 0.02) + (getTotalLuckBonus() * 0.01);
+        if (Math.random() < getSpawnRate() * luckBonus * dt) {
+            spawnPet();
+        }
+    }
+
+    checkEventExpiry();
     updateUI();
     requestAnimationFrame(gameTick);
 }
@@ -767,12 +1517,18 @@ function updateUI() {
 
 function renderCollection() {
     const grid = document.getElementById('collectionGrid');
-    grid.innerHTML = state.pets.map((pet, i) => `
-        <div class="pet-card slide-in bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-2 text-center border border-purple-500/30 ${i % 3 === 0 ? 'pet-bounce' : ''}" style="animation-delay: ${i * 50}ms">
-            <span class="text-3xl">${pet}</span>
+    grid.innerHTML = state.pets.map((pet, i) => {
+        const evoLevel = state.petEvolution[pet] || 0;
+        const acc = state.petAccessory[pet] || '';
+        const borderClass = getEvolutionBorder(evoLevel);
+        return `
+        <div onclick="openTrainingModal('${pet}')" class="pet-card slide-in cursor-pointer bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-2 text-center border ${borderClass} ${i % 3 === 0 ? 'pet-bounce' : ''}" style="animation-delay: ${i * 50}ms">
+            <span class="text-3xl">${pet}${getEvolutionSuffix(evoLevel)}</span>
+            ${acc ? '<span class="text-lg absolute -top-1 -right-1">' + acc + '</span>' : ''}
             ${state.petCounts[pet] > 1 ? `<span class="text-xs bg-red-500 rounded-full px-1">x${state.petCounts[pet]}</span>` : ''}
+            ${Object.values(state.petTraining[pet] || {}).some(v => v > 0) ? '<span class="text-xs text-yellow-400">★</span>' : ''}
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // Save/Load
@@ -786,24 +1542,54 @@ function loadGame() {
     if (saved) {
         const loaded = JSON.parse(saved);
         state = { ...state, ...loaded };
-        
+
+        // Initialize new state properties if missing
+        state.petEvolution = state.petEvolution || {};
+        state.petTraining = state.petTraining || {};
+        state.petAccessory = state.petAccessory || {};
+        state.accessories = state.accessories || [];
+        state.quests = state.quests || [];
+        state.questProgress = state.questProgress || {};
+        state.eggValueLevel = state.eggValueLevel || 0;
+        state.eggValueBonus = state.eggValueBonus || 0;
+        state.autoClickLevel = state.autoClickLevel || 0;
+        state.luckLevel = state.luckLevel || 0;
+        state.luckBonus = state.luckBonus || 0;
+        state.event = state.event || { active: false, startTime: 0, type: "" };
+        state.lastChestOpen = state.lastChestOpen || 0;
+        state.lastQuestReset = state.lastQuestReset || 0;
+
         // Offline progress
         const offlineSecs = (Date.now() - state.lastSave) / 1000;
+        const eventMult = state.event.active ? 2 : 1;
         if (offlineSecs > 10) {
-            const offEggs = getEggRate() * offlineSecs * 0.5;
-            const offCoins = getCoinRate() * offlineSecs * 0.5;
+            const offEggs = getEggRate() * offlineSecs * 0.5 * eventMult;
+            const offCoins = getCoinRate() * offlineSecs * 0.5 * eventMult;
             state.eggs += offEggs;
             state.coins += offCoins;
-            
+
             if (offlineSecs > 60) {
                 showToast(`🌙 +${formatNumber(offEggs)} 🥚 dari ${Math.floor(offlineSecs/60)}m offline`);
             }
         }
-        
+
         checkSellTiers();
+        generateQuests();
         renderCollection();
         updateTradeSection();
+        updateFusionSection();
+        updateAccessoryApplySection();
         checkAchievements();
+        checkEventExpiry();
+
+        // Show/hide event banner
+        if (state.event.active) {
+            document.getElementById('eventBanner').classList.remove('hidden');
+            document.getElementById('eventBtn').classList.add('hidden');
+        } else {
+            document.getElementById('eventBanner').classList.add('hidden');
+            document.getElementById('eventBtn').classList.remove('hidden');
+        }
     }
 }
 
