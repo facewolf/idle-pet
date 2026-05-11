@@ -39,6 +39,13 @@
             transform: translateY(-5px) scale(1.05);
             box-shadow: 0 10px 25px rgba(255,107,157,0.3);
         }
+        .pet-bounce {
+            animation: petBounce 1s ease-in-out infinite;
+        }
+        @keyframes petBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
         .shake {
             animation: shake 0.5s ease-in-out;
         }
@@ -54,6 +61,21 @@
             from { opacity: 0; transform: scale(0.8); }
             to { opacity: 1; transform: scale(1); }
         }
+        .spin-wheel {
+            animation: spin 3s cubic-bezier(0.17, 0.67, 0.12, 0.99) forwards;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(var(--spin-deg, 1800deg)); }
+        }
+        .achievement-unlock {
+            animation: achievementPop 0.5s ease-out;
+        }
+        @keyframes achievementPop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1a1230; }
         ::-webkit-scrollbar-thumb { background: #ff6b9d; border-radius: 4px; }
@@ -65,65 +87,155 @@
         <span id="toastText" class="font-semibold"></span>
     </div>
 
+    <!-- Spin Modal -->
+    <div id="spinModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 text-center">
+            <h2 class="text-2xl font-bold mb-4">🎰 Lucky Spin!</h2>
+            <div id="spinWheel" class="w-48 h-48 rounded-full border-4 border-yellow-400 bg-gradient-to-br from-red-500 via-yellow-400 to-green-500 flex items-center justify-center text-5xl mx-auto mb-4">
+                🎯
+            </div>
+            <button onclick="doSpin()" id="spinBtn" class="bg-gradient-to-r from-yellow-400 to-orange-500 px-8 py-3 rounded-xl font-bold text-black hover:scale-105 transition-transform">
+                SPIN! (Biaya: 500 🪙)
+            </button>
+            <p class="text-sm text-gray-400 mt-2">Cool down: <span id="spinCooldown">Ready!</span></p>
+            <button onclick="closeSpinModal()" class="mt-4 text-gray-400 hover:text-white">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Daily Reward Modal -->
+    <div id="dailyModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 text-center">
+            <h2 class="text-2xl font-bold mb-2">🎁 Daily Reward!</h2>
+            <p class="text-gray-400 mb-4">Login harian #<span id="dailyStreak">1</span></p>
+            <div class="text-6xl mb-4" id="dailyRewardIcon">🎁</div>
+            <p class="text-xl font-bold text-yellow-300 mb-2" id="dailyRewardText">+100 🥚 & +50 🪙</p>
+            <button onclick="claimDailyReward()" class="bg-gradient-to-r from-green-500 to-emerald-500 px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform">
+                CLAIM!
+            </button>
+            <p class="text-xs text-gray-500 mt-2" id="nextRewardTime">Next reward: 24h</p>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4">
+            <h2 class="text-2xl font-bold mb-4">📊 Statistik</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between"><span>Total Klik:</span><span id="statClicks" class="font-bold">0</span></div>
+                <div class="flex justify-between"><span>Telur Diklik:</span><span id="statEggs" class="font-bold">0</span></div>
+                <div class="flex justify-between"><span>Total Koin:</span><span id="statCoins" class="font-bold">0</span></div>
+                <div class="flex justify-between"><span>Hewan dikumpulkan:</span><span id="statPets" class="font-bold">0</span></div>
+                <div class="flex justify-between"><span>Waktu Bermain:</span><span id="statTime" class="font-bold">0m</span></div>
+                <div class="flex justify-between"><span>Spins dilakukan:</span><span id="statSpins" class="font-bold">0</span></div>
+                <div class="flex justify-between"><span>Achievements:</span><span id="statAch" class="font-bold">0/8</span></div>
+            </div>
+            <button onclick="closeStatsModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Achievements Modal -->
+    <div id="achModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4">🏆 Achievements</h2>
+            <div id="achList" class="space-y-3"></div>
+            <button onclick="closeAchModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
     <div class="container mx-auto px-4 py-6 max-w-6xl">
         <!-- Header -->
-        <header class="text-center mb-8">
+        <header class="text-center mb-4">
             <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-300 bg-clip-text text-transparent mb-2">
                 🐾 Idle Pet Collector
             </h1>
-            <p class="text-gray-400">Klik telur, kumpulkan hewan kesayangan!</p>
+            <div class="flex justify-center gap-3 flex-wrap">
+                <button onclick="openStatsModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-purple-600 transition-colors">📊 Stats</button>
+                <button onclick="openAchModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-purple-600 transition-colors">🏆 Achievements</button>
+                <button onclick="openSpinModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-yellow-600 transition-colors">🎰 Spin</button>
+            </div>
         </header>
 
         <!-- Resource Display -->
-        <div class="grid grid-cols-4 gap-3 mb-8">
-            <div class="bg-card/80 backdrop-blur rounded-xl p-4 text-center border border-purple-500/30">
-                <div class="text-3xl mb-1">🥚</div>
-                <div id="eggs" class="text-2xl font-bold text-purple-300">0</div>
+        <div class="grid grid-cols-4 gap-3 mb-6">
+            <div class="bg-card/80 backdrop-blur rounded-xl p-3 text-center border border-purple-500/30">
+                <div class="text-2xl mb-1">🥚</div>
+                <div id="eggs" class="text-xl font-bold text-purple-300">0</div>
                 <div class="text-xs text-gray-400">Telur</div>
             </div>
-            <div class="bg-card/80 backdrop-blur rounded-xl p-4 text-center border border-yellow-500/30">
-                <div class="text-3xl mb-1">🪙</div>
-                <div id="coins" class="text-2xl font-bold text-yellow-300">0</div>
+            <div class="bg-card/80 backdrop-blur rounded-xl p-3 text-center border border-yellow-500/30">
+                <div class="text-2xl mb-1">🪙</div>
+                <div id="coins" class="text-xl font-bold text-yellow-300">0</div>
                 <div class="text-xs text-gray-400">Koin</div>
             </div>
-            <div class="bg-card/80 backdrop-blur rounded-xl p-4 text-center border border-green-500/30">
-                <div class="text-3xl mb-1">🐾</div>
-                <div id="pets" class="text-2xl font-bold text-green-300">0</div>
+            <div class="bg-card/80 backdrop-blur rounded-xl p-3 text-center border border-green-500/30">
+                <div class="text-2xl mb-1">🐾</div>
+                <div id="pets" class="text-xl font-bold text-green-300">0</div>
                 <div class="text-xs text-gray-400">Hewan</div>
             </div>
-            <div class="bg-card/80 backdrop-blur rounded-xl p-4 text-center border border-red-500/30 flex flex-col items-center justify-center">
-                <button id="sellEggs" onclick="sellEggs()" class="text-3xl mb-1">🏪</button>
-                <div id="sellStatus" class="text-sm font-semibold text-red-300">100 🥚 → 10 🪙</div>
-                <div class="text-xs text-gray-400">Tekan untuk jual</div>
+            <div class="bg-card/80 backdrop-blur rounded-xl p-3 text-center border border-red-500/30 flex flex-col items-center justify-center">
+                <button onclick="sellEggs()" class="text-2xl mb-1">🏪</button>
+                <div id="sellStatus" class="text-xs font-semibold text-red-300">100 🥚 → 10 🪙</div>
             </div>
         </div>
 
-        <!-- Click Area -->
-        <div class="flex flex-col items-center mb-8">
+        <!-- Click Area with Upgrades -->
+        <div class="flex flex-col items-center mb-6">
             <div class="relative">
-                <button id="mainEgg" class="click-egg w-48 h-48 md:w-56 md:h-56 rounded-full bg-gradient-to-br from-yellow-200 via-yellow-300 to-orange-400 flex items-center justify-center text-8xl shadow-2xl pulse-glow transition-transform duration-200 cursor-pointer border-4 border-yellow-500/50">
+                <button id="mainEgg" class="click-egg w-40 h-40 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-yellow-200 via-yellow-300 to-orange-400 flex items-center justify-center text-7xl shadow-2xl pulse-glow transition-transform duration-200 cursor-pointer border-4 border-yellow-500/50">
                     🥚
                 </button>
-                <div id="clickEffect" class="absolute -top-4 left-1/2 -translate-x-1/2 text-xl font-bold text-green-400 opacity-0 transition-opacity">
+                <div id="clickEffect" class="absolute -top-4 left-1/2 -translate-x-1/2 text-lg font-bold text-green-400 opacity-0 transition-opacity">
                     +1 🥚
                 </div>
             </div>
-            <div class="mt-4 text-gray-400 text-sm">
-                Produksi: <span id="eggRate" class="text-purple-300 font-semibold">0</span> telur/detik | 
-                Bonus: <span id="bonusMult" class="text-pink-300 font-semibold">x1</span>
+            <div class="mt-3 text-gray-400 text-sm flex items-center gap-4">
+                <span>+<span id="clickPower" class="text-green-300 font-bold">1</span> per klik</span>
+                <span>|</span>
+                <span>Rate: <span id="eggRate" class="text-purple-300">0</span>/s</span>
+            </div>
+            
+            <!-- Click Upgrade -->
+            <div class="mt-4 bg-card/60 rounded-xl p-3 flex items-center gap-4">
+                <span class="text-2xl">⬆️</span>
+                <div class="flex-1">
+                    <p class="font-semibold text-sm">Upgrade Click (+1 per level)</p>
+                    <p class="text-xs text-gray-400">Level: <span id="clickLevel">0</span> | Bonus: +<span id="clickBonus">0</span></p>
+                </div>
+                <button onclick="upgradeClick()" id="upgradeClickBtn" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-semibold">
+                    🪙 <span id="clickUpgradeCost">100</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sell Tiers -->
+        <div class="bg-card/60 backdrop-blur rounded-xl p-4 mb-6 border border-purple-500/20">
+            <h3 class="font-bold mb-3 flex items-center gap-2">📈 Tier Penjualan Telur</h3>
+            <div class="grid grid-cols-3 gap-3 text-center text-sm">
+                <div id="tier1" class="bg-blue-900/30 rounded-lg p-2 border border-blue-500/30">
+                    <p class="text-lg">100 🥚</p>
+                    <p class="text-green-400">→ 10 🪙</p>
+                    <p class="text-xs text-gray-400 mt-1">Basic</p>
+                </div>
+                <div id="tier2" class="bg-orange-900/30 rounded-lg p-2 border border-orange-500/30 opacity-50">
+                    <p class="text-lg">1K 🥚</p>
+                    <p class="text-green-400">→ 150 🪙</p>
+                    <p class="text-xs text-gray-400 mt-1">Premium (lvl 10+)</p>
+                </div>
+                <div id="tier3" class="bg-purple-900/30 rounded-lg p-2 border border-purple-500/30 opacity-50">
+                    <p class="text-lg">10K 🥚</p>
+                    <p class="text-green-400">→ 2000 🪙</p>
+                    <p class="text-xs text-gray-400 mt-1">VIP (lvl 25+)</p>
+                </div>
             </div>
         </div>
 
         <!-- Shop Section -->
-        <div class="bg-card/60 backdrop-blur rounded-2xl p-6 mb-8 border border-purple-500/20">
-            <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
-                🏪 Toko
-            </h2>
+        <div class="bg-card/60 backdrop-blur rounded-2xl p-5 mb-6 border border-purple-500/20">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">🏪 Toko</h2>
             <div class="grid md:grid-cols-3 gap-4">
-                <!-- Incubator -->
                 <div class="bg-gradient-to-br from-blue-900/50 to-blue-800/30 rounded-xl p-4 border border-blue-500/30">
                     <div class="flex items-center gap-3 mb-2">
-                        <span class="text-3xl">🧪</span>
+                        <span class="text-2xl">🧪</span>
                         <div>
                             <h3 class="font-bold">Inkubator Mini</h3>
                             <p class="text-xs text-blue-300">+1 telur/detik</p>
@@ -131,16 +243,15 @@
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-yellow-300 font-semibold">🪙 <span id="incubatorCost">50</span></span>
-                        <button id="buyIncubator" onclick="buy('incubator')" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                            Beli (<span id="incubatorOwned">0</span>)
+                        <button onclick="buy('incubator')" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded-lg text-sm font-semibold">
+                            (<span id="incubatorOwned">0</span>)
                         </button>
                     </div>
                 </div>
                 
-                <!-- Hatchery -->
                 <div class="bg-gradient-to-br from-orange-900/50 to-orange-800/30 rounded-xl p-4 border border-orange-500/30">
                     <div class="flex items-center gap-3 mb-2">
-                        <span class="text-3xl">🔧</span>
+                        <span class="text-2xl">🔧</span>
                         <div>
                             <h3 class="font-bold">Mesin Penetas</h3>
                             <p class="text-xs text-orange-300">+5 telur + 0.1 koin/detik</p>
@@ -148,57 +259,69 @@
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-yellow-300 font-semibold">🪙 <span id="hatcheryCost">300</span></span>
-                        <button id="buyHatchery" onclick="buy('hatchery')" class="bg-orange-600 hover:bg-orange-500 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                            Beli (<span id="hatcheryOwned">0</span>)
+                        <button onclick="buy('hatchery')" class="bg-orange-600 hover:bg-orange-500 px-3 py-1 rounded-lg text-sm font-semibold">
+                            (<span id="hatcheryOwned">0</span>)
                         </button>
                     </div>
                 </div>
                 
-                <!-- Pet Center -->
                 <div class="bg-gradient-to-br from-pink-900/50 to-pink-800/30 rounded-xl p-4 border border-pink-500/30">
                     <div class="flex items-center gap-3 mb-2">
-                        <span class="text-3xl">🏠</span>
+                        <span class="text-2xl">🏠</span>
                         <div>
                             <h3 class="font-bold">Pet Center</h3>
-                            <p class="text-xs text-pink-300">Otomatis spawn hewan</p>
+                            <p class="text-xs text-pink-300">Auto spawn hewan</p>
                         </div>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-yellow-300 font-semibold">🪙 <span id="petCenterCost">1000</span></span>
-                        <button id="buyPetCenter" onclick="buy('petCenter')" class="bg-pink-600 hover:bg-pink-500 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                            Beli (<span id="petCenterOwned">0</span>)
+                        <button onclick="buy('petCenter')" class="bg-pink-600 hover:bg-pink-500 px-3 py-1 rounded-lg text-sm font-semibold">
+                            (<span id="petCenterOwned">0</span>)
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Pet Trading Section -->
+        <div class="bg-card/60 backdrop-blur rounded-2xl p-5 mb-6 border border-cyan-500/20">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">🔄 Trade Hewan (Duplikat)</h2>
+            <p class="text-sm text-gray-400 mb-3">Tukar hewan duplikat untuk koin bonus!</p>
+            <div id="tradeSection" class="text-center text-gray-500 py-4">
+                Tidak ada duplikat untuk ditukar
+            </div>
+        </div>
+
         <!-- Prestige Section -->
-        <div class="bg-gradient-to-r from-purple-900/60 to-pink-900/60 backdrop-blur rounded-2xl p-6 mb-8 border border-purple-500/30">
+        <div class="bg-gradient-to-r from-purple-900/60 to-pink-900/60 backdrop-blur rounded-2xl p-5 mb-6 border border-purple-500/30">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold mb-1">⭐ Sistem Prestige</h2>
-                    <p class="text-gray-400 text-sm">
-                        Reset progress untuk mendapatkan Prestige Points yang meningkatkan produksi!
-                    </p>
-                    <div class="mt-2 flex gap-4">
-                        <span class="text-purple-300">PP: <span id="prestigePoints" class="font-bold text-xl">0</span></span>
-                        <span class="text-pink-300">Multiplier: <span id="prestigeMult" class="font-bold text-xl">x1</span></span>
+                    <h2 class="text-xl font-bold mb-1">⭐ Prestige</h2>
+                    <p class="text-gray-400 text-sm">Reset progress, keep animals & multiplier!</p>
+                    <div class="mt-2 flex gap-4 text-sm">
+                        <span class="text-purple-300">PP: <span id="prestigePoints" class="font-bold">0</span></span>
+                        <span class="text-pink-300">Mult: <span id="prestigeMult">x1</span></span>
                     </div>
                 </div>
-                <button id="prestigeBtn" onclick="doPrestige()" class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 px-8 py-3 rounded-xl font-bold text-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" disabled>
-                    🔄 Prestige (<span id="petsForPrestige">5</span>/5 🐾)
+                <button onclick="doPrestige()" id="prestigeBtn" disabled class="bg-gradient-to-r from-purple-600 to-pink-500 px-6 py-2 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                    🔄 Prestige (<span id="petsForPrestige">0</span>/5)
                 </button>
             </div>
         </div>
 
+        <!-- Daily Reward Button -->
+        <div class="mb-6 text-center">
+            <button onclick="checkDailyReward()" id="dailyBtn" class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 rounded-xl font-bold hover:scale-105 transition-transform">
+                🎁 Daily Reward (<span id="dailyStatus">Claim!</span>)
+            </button>
+        </div>
+
         <!-- Collection Gallery -->
-        <div class="bg-card/60 backdrop-blur rounded-2xl p-6 border border-green-500/20">
-            <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
-                📸 Koleksi Hewan (<span id="collectionCount">0</span>/12)
+        <div class="bg-card/60 backdrop-blur rounded-2xl p-5 border border-green-500/20">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                📸 Koleksi Hewan (<span id="collectionCount">0</span>/16)
             </h2>
             <div id="collectionGrid" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                <!-- Pet cards will be inserted here -->
             </div>
             <div id="emptyCollection" class="text-center py-12 text-gray-500">
                 <p class="text-4xl mb-2">🥚</p>
@@ -207,8 +330,8 @@
         </div>
 
         <!-- Footer -->
-        <footer class="text-center mt-8 text-gray-500 text-sm">
-            <p>Auto-save setiap 30 detik | Offline progress dihitung saat buka tab</p>
+        <footer class="text-center mt-8 text-gray-500 text-xs">
+            <p>Auto-save 30s | Offline 50% efficiency | Day <span id="playDay">1</span></p>
         </footer>
     </div>
 
@@ -216,18 +339,31 @@
 // ============== GAME STATE ==============
 const PETS = ['🐶','🐱','🐰','🦊','🐻','🐼','🦁','🐮','🐷','🐸','🐵','🐔','🦋','🐢','🦉','🐙'];
 const BASE_COSTS = { incubator: 50, hatchery: 300, petCenter: 1000 };
-const COST_MULTIPLIERS = { incubator: 1.5, hatchery: 1.6, petCenter: 1.8 };
+const COST_MULT = { incubator: 1.5, hatchery: 1.6, petCenter: 1.8 };
+const SPIN_PRIZES = ['🎁 +50 🥚', '🪙 +30 🪙', '🎁 +100 🥚', '🪙 +60 🪙', '⭐ 2x Clicks (10s)', '🎁 +200 🥚', '🪙 +100 🪙', '🎁 +500 🥚'];
+const ACHIEVEMENTS = [
+    { id: 'click100', name: 'Klik Pemula', desc: '100 kali klik', icon: '👆', check: s => s.stats.totalClicks >= 100, reward: 50 },
+    { id: 'click1000', name: 'Klik Mania', desc: '1000 kali klik', icon: '🤙', check: s => s.stats.totalClicks >= 1000, reward: 200 },
+    { id: 'click10k', name: 'Klik Legends', desc: '10000 kali klik', icon: '👊', check: s => s.stats.totalClicks >= 10000, reward: 1000 },
+    { id: 'pet5', name: 'Pet Lover', desc: 'Kumpulkan 5 hewan', icon: '🐾', check: s => s.pets.length >= 5, reward: 300 },
+    { id: 'pet16', name: 'Pet Master', desc: 'Kumpulkan semua 16 hewan', icon: '👑', check: s => s.pets.length >= 16, reward: 2000 },
+    { id: 'coin1k', name: 'Kaya', desc: 'Kumpulkan 1000 koin total', icon: '💰', check: s => s.stats.totalCoinsEarned >= 1000, reward: 500 },
+    { id: 'spin5', name: 'Spinner', desc: 'Spin 5 kali', icon: '🎰', check: s => s.stats.totalSpins >= 5, reward: 250 },
+    { id: 'prestige1', name: 'First Reset', desc: 'Lakukan prestige pertama', icon: '🔄', check: s => s.prestige.points >= 1, reward: 1000 }
+];
 
 let state = {
-    eggs: 0,
-    coins: 0,
-    pets: [],
+    eggs: 0, coins: 0, pets: [], petCounts: {},
     owned: { incubator: 0, hatchery: 0, petCenter: 0 },
     prestige: { points: 0, mult: 1 },
-    lastSave: Date.now()
+    clickLevel: 0, clickPower: 1,
+    lastSave: Date.now(), startTime: Date.now(),
+    lastDaily: 0, dailyStreak: 0,
+    lastSpin: 0,
+    stats: { totalClicks: 0, totalCoinsEarned: 0, totalSpins: 0 },
+    achievements: []
 };
 
-// ============== UTILITY FUNCTIONS ==============
 function formatNumber(n) {
     if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
     if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
@@ -235,14 +371,12 @@ function formatNumber(n) {
     return Math.floor(n).toString();
 }
 
+// Toast notification
 function showToast(msg) {
     const toast = document.getElementById('toast');
     document.getElementById('toastText').textContent = msg;
     toast.classList.remove('hidden');
-    toast.style.transform = 'translate(-50%, 0)';
-    setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 2500);
+    setTimeout(() => toast.classList.add('hidden'), 2500);
 }
 
 function showClickEffect(amount) {
@@ -250,41 +384,28 @@ function showClickEffect(amount) {
     effect.textContent = '+' + amount + ' 🥚';
     effect.style.opacity = '1';
     effect.style.top = '-20px';
-    setTimeout(() => {
-        effect.style.opacity = '0';
-        effect.style.top = '-40px';
-    }, 600);
+    setTimeout(() => { effect.style.opacity = '0'; effect.style.top = '-40px'; }, 600);
 }
 
-// Jual telur → koin
-function sellEggs() {
-    if (state.eggs >= 100) {
-        state.eggs -= 100;
-        state.coins += 10;
-        showToast('💰 Terjual: 100 🥚 → 10 🪙');
-        updateUI();
-    } else {
-        showToast('❌ Butuh 100 telur untuk menjual!');
-    }
-}
-
-// ============== CORE GAME LOGIC ==============
+// Core functions
 function clickEgg() {
-    const bonus = state.prestige.mult;
-    state.eggs += bonus;
-    showClickEffect(bonus);
+    state.eggs += state.clickPower;
+    state.stats.totalClicks++;
+    showClickEffect(state.clickPower);
     document.getElementById('mainEgg').classList.add('shake');
     setTimeout(() => document.getElementById('mainEgg').classList.remove('shake'), 200);
+    checkAchievements();
     updateUI();
 }
 
 function getEggRate() {
-    const base = state.owned.incubator * 1 + state.owned.hatchery * 5;
-    return base * state.prestige.mult;
+    return (state.owned.incubator * 1 + state.owned.hatchery * 5) * state.prestige.mult;
 }
-
 function getCoinRate() {
     return state.owned.hatchery * 0.1 * state.prestige.mult;
+}
+function getCost(type) {
+    return Math.floor(BASE_COSTS[type] * Math.pow(COST_MULT[type], state.owned[type]));
 }
 
 function buy(type) {
@@ -292,33 +413,107 @@ function buy(type) {
     if (state.coins >= cost) {
         state.coins -= cost;
         state.owned[type]++;
-        showToast('✅ Berhasil beli ' + type);
+        showToast('✅ Beli ' + type);
         updateUI();
     }
 }
 
-function getCost(type) {
-    return Math.floor(BASE_COSTS[type] * Math.pow(COST_MULTIPLIERS[type], state.owned[type]));
+function getClickUpgradeCost() {
+    return Math.floor(100 * Math.pow(1.5, state.clickLevel));
 }
 
-// Spawn random pet (if not already owned)
-function spawnPet() {
-    const available = PETS.filter(p => !state.pets.includes(p));
-    if (available.length > 0) {
-        const newPet = available[Math.floor(Math.random() * available.length)];
-        state.pets.push(newPet);
-        showToast('🎉 Hewan baru: ' + newPet);
-        renderCollection();
+function upgradeClick() {
+    const cost = getClickUpgradeCost();
+    if (state.coins >= cost) {
+        state.coins -= cost;
+        state.clickLevel++;
+        state.clickPower = 1 + state.clickLevel;
+        showToast('⬆️ Click upgraded to +' + state.clickPower);
+        checkSellTiers();
+        updateUI();
     }
 }
 
-// Convert eggs to coins (manual conversion)
-function convertEggsToCoins() {
-    if (state.eggs >= 100) {
+// Sell eggs with tier support
+function sellEggs() {
+    const level = state.clickLevel;
+    if (state.eggs >= 10000 && level >= 25) {
+        state.eggs -= 10000;
+        state.coins += 2000;
+        state.stats.totalCoinsEarned += 2000;
+        showToast('💰 VIP Sell: 10K 🥚 → 2000 🪙');
+    } else if (state.eggs >= 1000 && level >= 10) {
+        state.eggs -= 1000;
+        state.coins += 150;
+        state.stats.totalCoinsEarned += 150;
+        showToast('💰 Premium Sell: 1K 🥚 → 150 🪙');
+    } else if (state.eggs >= 100) {
         state.eggs -= 100;
         state.coins += 10;
-        showToast('💰 Ditukar: 100 🥚 → 10 🪙');
+        state.stats.totalCoinsEarned += 10;
+        showToast('💰 Basic Sell: 100 🥚 → 10 🪙');
+    } else {
+        showToast('❌ Butuh minimal 100 telur!');
+        return;
+    }
+    checkAchievements();
+    updateUI();
+}
+
+function checkSellTiers() {
+    const tier2 = document.getElementById('tier2');
+    const tier3 = document.getElementById('tier3');
+    tier2.style.opacity = state.clickLevel >= 10 ? '1' : '0.5';
+    tier3.style.opacity = state.clickLevel >= 25 ? '1' : '0.5';
+}
+
+// Pet Trading
+function updateTradeSection() {
+    const duplicates = Object.entries(state.petCounts).filter(([p, c]) => c > 1);
+    const section = document.getElementById('tradeSection');
+    
+    if (duplicates.length === 0) {
+        section.innerHTML = '<p class="text-gray-500">Tidak ada duplikat</p>';
+        return;
+    }
+    
+    section.innerHTML = duplicates.map(([pet, count]) => `
+        <div class="flex items-center justify-between bg-cyan-900/30 rounded-lg p-2 mb-2">
+            <span class="text-2xl">${pet}</span>
+            <span class="text-sm text-gray-400">x${count}</span>
+            <button onclick="tradePet('${pet}')" class="bg-cyan-600 hover:bg-cyan-500 px-3 py-1 rounded text-sm">
+                Trade → 🪙 ${count * 25}
+            </button>
+        </div>
+    `).join('');
+}
+
+function tradePet(pet) {
+    if (state.petCounts[pet] > 1) {
+        state.petCounts[pet]--;
+        state.coins += 25;
+        state.stats.totalCoinsEarned += 25;
+        showToast(`🔄 Trade ${pet} → 25 🪙`);
+        // Remove from pets array if count drops
+        if (state.petCounts[pet] === 0) {
+            state.pets = state.pets.filter(p => p !== pet);
+            renderCollection();
+        }
+        updateTradeSection();
         updateUI();
+    }
+}
+
+function spawnPet() {
+    const available = PETS.filter(p => !state.pets.includes(p) || state.petCounts[p] < 3);
+    if (available.length > 0) {
+        const newPet = available[Math.floor(Math.random() * available.length)];
+        if (!state.pets.includes(newPet)) state.pets.push(newPet);
+        state.petCounts[newPet] = (state.petCounts[newPet] || 0) + 1;
+        showToast('🎉 Hewan baru: ' + newPet);
+        renderCollection();
+        updateTradeSection();
+        checkAchievements();
     }
 }
 
@@ -326,22 +521,190 @@ function doPrestige() {
     if (state.pets.length < 5) return;
     const newPP = state.prestige.points + 1;
     const newMult = 1 + (newPP * 0.25);
-    if (confirm(`Prestige? Kamu dapat +1 PP (x${newMult.toFixed(2)} multiplier). Progress di-reset.`)) {
+    if (confirm(`Prestige? +1 PP (x${newMult.toFixed(2)} mult). Progress di-reset.`)) {
         state = {
-            eggs: 0,
-            coins: 0,
-            pets: state.pets, // Keep pets!
+            ...state,
+            eggs: 0, coins: 0,
+            pets: state.pets,
+            petCounts: state.petCounts,
             owned: { incubator: 0, hatchery: 0, petCenter: 0 },
             prestige: { points: newPP, mult: newMult },
+            clickLevel: 0, clickPower: 1,
             lastSave: Date.now()
         };
-        showToast(`⭐ Prestige berhasil! Multiplier: x${newMult.toFixed(2)}`);
+        showToast(`⭐ Prestige! Mult: x${newMult.toFixed(2)}`);
+        checkSellTiers();
+        checkAchievements();
         updateUI();
         saveGame();
     }
 }
 
-// ============== GAME LOOP ==============
+// Daily Reward
+function checkDailyReward() {
+    const now = Date.now();
+    const hoursSince = (now - state.lastDaily) / (1000 * 60 * 60);
+    
+    if (hoursSince >= 20) { // 20 hours cooldown
+        state.dailyStreak++;
+        state.lastDaily = now;
+        state.eggs += 100;
+        state.coins += 50;
+        state.stats.totalCoinsEarned += 50;
+        
+        document.getElementById('dailyStreak').textContent = state.dailyStreak;
+        document.getElementById('dailyRewardIcon').textContent = state.dailyStreak % 7 === 0 ? '🎁' : '🎁';
+        document.getElementById('dailyRewardText').textContent = state.dailyStreak % 7 === 0 ? 
+            '+200 🥚 & +100 🪙 (Weekly!)' : '+100 🥚 & +50 🪙';
+        
+        if (state.dailyStreak % 7 === 0) {
+            state.eggs += 100;
+            state.coins += 50;
+        }
+        
+        document.getElementById('dailyModal').classList.remove('hidden');
+        updateUI();
+        saveGame();
+    } else {
+        const hoursLeft = Math.ceil(20 - hoursSince);
+        showToast(`⏰ Tunggu ${hoursLeft}h untuk daily reward`);
+    }
+}
+
+function claimDailyReward() {
+    document.getElementById('dailyModal').classList.add('hidden');
+    showToast('🎁 Daily reward diklaim!');
+}
+
+// Lucky Spin
+function openSpinModal() {
+    document.getElementById('spinModal').classList.remove('hidden');
+    updateSpinCooldown();
+}
+
+function closeSpinModal() {
+    document.getElementById('spinModal').classList.add('hidden');
+}
+
+function updateSpinCooldown() {
+    const now = Date.now();
+    const secs = Math.floor((now - state.lastSpin) / 1000);
+    const cd = document.getElementById('spinCooldown');
+    const btn = document.getElementById('spinBtn');
+    
+    if (secs < 300) { // 5 min cooldown
+        const mins = Math.ceil((300 - secs) / 60);
+        cd.textContent = mins + 'm';
+        btn.disabled = true;
+    } else {
+        cd.textContent = 'Ready!';
+        btn.disabled = state.coins < 500;
+    }
+}
+
+function doSpin() {
+    if (state.coins < 500) { showToast('❌ Butuh 500 🪙'); return; }
+    if ((Date.now() - state.lastSpin) < 300000) { showToast('⏰ Cooldown 5 menit'); return; }
+    
+    state.coins -= 500;
+    state.lastSpin = Date.now();
+    state.stats.totalSpins++;
+    
+    const prize = SPIN_PRIZES[Math.floor(Math.random() * SPIN_PRIZES.length)];
+    const wheel = document.getElementById('spinWheel');
+    wheel.style.setProperty('--spin-deg', (1800 + Math.random() * 720) + 'deg');
+    wheel.classList.add('spin-wheel');
+    
+    setTimeout(() => {
+        wheel.classList.remove('spin-wheel');
+        
+        // Parse and apply prize
+        if (prize.includes('🥚')) {
+            const amount = parseInt(prize.match(/\d+/)[0]);
+            state.eggs += amount;
+            showToast('🎁 ' + prize);
+        } else if (prize.includes('🪙')) {
+            const amount = parseInt(prize.match(/\d+/)[0]);
+            state.coins += amount;
+            state.stats.totalCoinsEarned += amount;
+            showToast('💰 ' + prize);
+        } else if (prize.includes('2x')) {
+            state.clickPower *= 2;
+            showToast('⚡ ' + prize);
+            setTimeout(() => {
+                state.clickPower /= 2;
+                updateUI();
+            }, 10000);
+        }
+        
+        checkAchievements();
+        updateUI();
+        updateSpinCooldown();
+        closeSpinModal();
+    }, 3000);
+}
+
+// Statistics
+function openStatsModal() {
+    const elapsed = Date.now() - state.startTime;
+    const mins = Math.floor(elapsed / 60000);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+    
+    document.getElementById('statClicks').textContent = formatNumber(state.stats.totalClicks);
+    document.getElementById('statEggs').textContent = formatNumber(state.eggs);
+    document.getElementById('statCoins').textContent = formatNumber(state.stats.totalCoinsEarned);
+    document.getElementById('statPets').textContent = state.pets.length;
+    document.getElementById('statTime').textContent = days > 0 ? days + 'd ' + (hours % 24) + 'h' : hours > 0 ? hours + 'h ' + (mins % 60) + 'm' : mins + 'm';
+    document.getElementById('statSpins').textContent = state.stats.totalSpins;
+    document.getElementById('statAch').textContent = state.achievements.length + '/8';
+    document.getElementById('playDay').textContent = Math.floor(days) + 1;
+    
+    document.getElementById('statsModal').classList.remove('hidden');
+}
+
+function closeStatsModal() {
+    document.getElementById('statsModal').classList.add('hidden');
+}
+
+// Achievements
+function checkAchievements() {
+    ACHIEVEMENTS.forEach(ach => {
+        if (!state.achievements.includes(ach.id) && ach.check(state)) {
+            state.achievements.push(ach.id);
+            state.coins += ach.reward;
+            state.stats.totalCoinsEarned += ach.reward;
+            showToast('🏆 Achievement: ' + ach.name + ' +' + ach.reward + ' 🪙');
+        }
+    });
+}
+
+function openAchModal() {
+    const list = document.getElementById('achList');
+    list.innerHTML = ACHIEVEMENTS.map(ach => {
+        const unlocked = state.achievements.includes(ach.id);
+        return `
+            <div class="p-3 rounded-xl ${unlocked ? 'bg-yellow-900/40 border border-yellow-500/40' : 'bg-gray-800/40 border border-gray-600/40'} ${unlocked ? 'achievement-unlock' : ''}">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">${ach.icon}</span>
+                    <div class="flex-1">
+                        <p class="font-bold ${unlocked ? 'text-yellow-300' : 'text-gray-400'}">${ach.name}</p>
+                        <p class="text-xs text-gray-500">${ach.desc}</p>
+                    </div>
+                    <span class="${unlocked ? 'text-green-400' : 'text-gray-600'}">${unlocked ? '✓' : '🔒'}</span>
+                </div>
+                <p class="text-xs text-right text-gray-400 mt-1">Reward: +${ach.reward} 🪙</p>
+            </div>
+        `;
+    }).join('');
+    document.getElementById('achModal').classList.remove('hidden');
+}
+
+function closeAchModal() {
+    document.getElementById('achModal').classList.add('hidden');
+}
+
+// Game Loop
 let lastTick = Date.now();
 
 function gameTick() {
@@ -349,11 +712,9 @@ function gameTick() {
     const dt = (now - lastTick) / 1000;
     lastTick = now;
 
-    // Production
     state.eggs += getEggRate() * dt;
     state.coins += getCoinRate() * dt;
 
-    // Auto spawn pets
     if (state.owned.petCenter > 0 && Math.random() < state.owned.petCenter * 0.02 * dt) {
         spawnPet();
     }
@@ -362,24 +723,35 @@ function gameTick() {
     requestAnimationFrame(gameTick);
 }
 
-// ============== UI UPDATES ==============
+// UI Updates
 function updateUI() {
     document.getElementById('eggs').textContent = formatNumber(state.eggs);
     document.getElementById('coins').textContent = formatNumber(state.coins);
     document.getElementById('pets').textContent = state.pets.length;
+    document.getElementById('clickPower').textContent = state.clickPower;
     document.getElementById('eggRate').textContent = formatNumber(getEggRate());
-    document.getElementById('bonusMult').textContent = 'x' + state.prestige.mult.toFixed(2);
     
-    // Shop updates
+    // Click upgrade
+    document.getElementById('clickLevel').textContent = state.clickLevel;
+    document.getElementById('clickBonus').textContent = state.clickLevel;
+    const upgCost = getClickUpgradeCost();
+    document.getElementById('clickUpgradeCost').textContent = formatNumber(upgCost);
+    document.getElementById('upgradeClickBtn').disabled = state.coins < upgCost;
+    
+    // Sell status
+    const level = state.clickLevel;
+    if (level >= 25) {
+        document.getElementById('sellStatus').textContent = '10K 🥚 → 2K 🪙';
+    } else if (level >= 10) {
+        document.getElementById('sellStatus').textContent = '1K 🥚 → 150 🪙';
+    } else {
+        document.getElementById('sellStatus').textContent = '100 🥚 → 10 🪙';
+    }
+
+    // Shop
     ['incubator', 'hatchery', 'petCenter'].forEach(type => {
-        const cost = getCost(type);
-        const costEl = document.getElementById(type + 'Cost');
-        const ownedEl = document.getElementById(type + 'Owned');
-        const btn = document.getElementById('buy' + type.charAt(0).toUpperCase() + type.slice(1));
-        
-        costEl.textContent = formatNumber(cost);
-        ownedEl.textContent = state.owned[type];
-        btn.disabled = state.coins < cost;
+        document.getElementById(type + 'Cost').textContent = formatNumber(getCost(type));
+        document.getElementById(type + 'Owned').textContent = state.owned[type];
     });
 
     // Prestige
@@ -396,14 +768,14 @@ function updateUI() {
 function renderCollection() {
     const grid = document.getElementById('collectionGrid');
     grid.innerHTML = state.pets.map((pet, i) => `
-        <div class="pet-card slide-in bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-3 text-center border border-purple-500/30" style="animation-delay: ${i * 50}ms">
-            <span class="text-4xl">${pet}</span>
-            <div class="text-xs text-gray-400 mt-1">#${i + 1}</div>
+        <div class="pet-card slide-in bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-2 text-center border border-purple-500/30 ${i % 3 === 0 ? 'pet-bounce' : ''}" style="animation-delay: ${i * 50}ms">
+            <span class="text-3xl">${pet}</span>
+            ${state.petCounts[pet] > 1 ? `<span class="text-xs bg-red-500 rounded-full px-1">x${state.petCounts[pet]}</span>` : ''}
         </div>
     `).join('');
 }
 
-// ============== SAVE / LOAD ==============
+// Save/Load
 function saveGame() {
     state.lastSave = Date.now();
     localStorage.setItem('idlePetSave', JSON.stringify(state));
@@ -413,41 +785,32 @@ function loadGame() {
     const saved = localStorage.getItem('idlePetSave');
     if (saved) {
         const loaded = JSON.parse(saved);
-        // Merge with default state to handle new properties
         state = { ...state, ...loaded };
         
-        // Calculate offline progress
-        const offlineSeconds = (Date.now() - state.lastSave) / 1000;
-        if (offlineSeconds > 10) {
-            const offlineEggs = getEggRate() * offlineSeconds * 0.5; // 50% efficiency offline
-            const offlineCoins = getCoinRate() * offlineSeconds * 0.5;
-            state.eggs += offlineEggs;
-            state.coins += offlineCoins;
+        // Offline progress
+        const offlineSecs = (Date.now() - state.lastSave) / 1000;
+        if (offlineSecs > 10) {
+            const offEggs = getEggRate() * offlineSecs * 0.5;
+            const offCoins = getCoinRate() * offlineSecs * 0.5;
+            state.eggs += offEggs;
+            state.coins += offCoins;
             
-            if (offlineSeconds > 60) {
-                showToast(`🌙 Selamat datang! +${formatNumber(offlineEggs)} 🥚 dari offline ${Math.floor(offlineSeconds/60)} menit`);
+            if (offlineSecs > 60) {
+                showToast(`🌙 +${formatNumber(offEggs)} 🥚 dari ${Math.floor(offlineSecs/60)}m offline`);
             }
         }
         
+        checkSellTiers();
         renderCollection();
+        updateTradeSection();
+        checkAchievements();
     }
 }
 
-// Auto-save every 30 seconds
 setInterval(saveGame, 30000);
 
-// ============== INIT ==============
+// Init
 document.getElementById('mainEgg').addEventListener('click', clickEgg);
-
-// Long press for egg conversion (mobile friendly)
-let pressTimer;
-document.getElementById('mainEgg').addEventListener('touchstart', (e) => {
-    pressTimer = setTimeout(() => {
-        convertEggsToCoins();
-    }, 800);
-});
-document.getElementById('mainEgg').addEventListener('touchend', () => clearTimeout(pressTimer));
-
 loadGame();
 updateUI();
 renderCollection();
