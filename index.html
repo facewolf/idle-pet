@@ -75,7 +75,7 @@
         </header>
 
         <!-- Resource Display -->
-        <div class="grid grid-cols-3 gap-3 mb-8">
+        <div class="grid grid-cols-4 gap-3 mb-8">
             <div class="bg-card/80 backdrop-blur rounded-xl p-4 text-center border border-purple-500/30">
                 <div class="text-3xl mb-1">🥚</div>
                 <div id="eggs" class="text-2xl font-bold text-purple-300">0</div>
@@ -90,6 +90,11 @@
                 <div class="text-3xl mb-1">🐾</div>
                 <div id="pets" class="text-2xl font-bold text-green-300">0</div>
                 <div class="text-xs text-gray-400">Hewan</div>
+            </div>
+            <div class="bg-card/80 backdrop-blur rounded-xl p-4 text-center border border-red-500/30 flex flex-col items-center justify-center">
+                <button id="sellEggs" onclick="sellEggs()" class="text-3xl mb-1">🏪</button>
+                <div id="sellStatus" class="text-sm font-semibold text-red-300">100 🥚 → 10 🪙</div>
+                <div class="text-xs text-gray-400">Tekan untuk jual</div>
             </div>
         </div>
 
@@ -249,6 +254,18 @@ function showClickEffect(amount) {
         effect.style.opacity = '0';
         effect.style.top = '-40px';
     }, 600);
+}
+
+// Jual telur → koin
+function sellEggs() {
+    if (state.eggs >= 100) {
+        state.eggs -= 100;
+        state.coins += 10;
+        showToast('💰 Terjual: 100 🥚 → 10 🪙');
+        updateUI();
+    } else {
+        showToast('❌ Butuh 100 telur untuk menjual!');
+    }
 }
 
 // ============== CORE GAME LOGIC ==============
