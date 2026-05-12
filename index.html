@@ -1097,8 +1097,8 @@ function getEvolutionSuffix(level) {
 function getEvolutionBorder(level) {
     if (level === 0) return 'border-purple-500/30';
     if (level === 1) return 'border-green-500/50';
-    if (level === 2) return 'border-purple-500/50';
-    return 'border-yellow-500/50';
+    if (level === 2) return 'border-purple-500/50 shadow-lg shadow-green-500/30';
+    return 'border-yellow-500/50 shadow-lg shadow-yellow-500/50 animate-pulse';
 }
 
 function updateFusionSection() {
@@ -1783,12 +1783,19 @@ function renderCollection() {
         const acc = state.petAccessory[pet] || '';
         const borderClass = getEvolutionBorder(evoLevel);
         return `
-        <div onclick="openTrainingModal('${pet}')" class="pet-card slide-in cursor-pointer bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-2 text-center border ${borderClass} ${i % 3 === 0 ? 'pet-bounce' : ''}" style="animation-delay: ${i * 50}ms">
+        <div onclick="openTrainingModal('${pet}')" class="pet-card slide-in cursor-pointer bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-2 text-center border ${borderClass} relative ${i % 3 === 0 ? 'pet-bounce' : ''}" style="animation-delay: ${i * 50}ms">
             <span class="text-3xl">${pet}${getEvolutionSuffix(evoLevel)}</span>
             ${acc ? '<span class="text-lg absolute -top-1 -right-1">' + acc + '</span>' : ''}
             ${state.petCounts[pet] > 1 ? `<span class="text-xs bg-red-500 rounded-full px-1">x${state.petCounts[pet]}</span>` : ''}
             ${Object.values(state.petTraining[pet] || {}).some(v => v > 0) ? '<span class="text-xs text-yellow-400">★</span>' : ''}
             ${state.petLevels[pet] ? '<span class="text-xs bg-blue-600 rounded-full px-1">Lv' + state.petLevels[pet] + '</span>' : ''}
+            ${evoLevel > 0 && evoLevel < 3 ? `
+                <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-full">
+                    <div class="bg-gray-700 rounded-full h-1">
+                        <div class="bg-gradient-to-r from-green-400 to-yellow-400 h-1 rounded-full" style="width:${(evoLevel/3)*100}%"></div>
+                    </div>
+                </div>
+            ` : ''}
         </div>
     `}).join('');
 }
