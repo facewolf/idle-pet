@@ -1578,6 +1578,11 @@ function autoSellEggs() {
     if (sold) {
         checkQuestProgress('sellPremium');
         checkQuestProgress('earnCoins', coinsEarned);
+        // Grant XP based on coins earned
+        state.pets.forEach(pet => {
+            addPetXP(pet, Math.floor(coinsEarned * 0.1));
+        });
+        addMasteryXP('coin', Math.floor(coinsEarned * 0.2));
     }
 }
 
