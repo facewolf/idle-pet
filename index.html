@@ -469,6 +469,39 @@
             </div>
         </div>
 
+        <!-- Auto-Upgrade Section -->
+        <div class="bg-card/60 backdrop-blur rounded-xl p-4 mb-6 border border-blue-500/20">
+            <h3 class="font-bold mb-3 flex items-center gap-2">⬆️ Auto-Upgrade</h3>
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="autoUpgradeMasterToggle" class="sr-only peer" onchange="toggleAutoUpgradeMaster()">
+                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                    </label>
+                    <span class="text-sm font-semibold" id="autoUpgradeMasterStatus">OFF</span>
+                </div>
+                <span class="text-xs text-gray-500">Auto buy upgrades when affordable</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-xs">
+                <div class="flex items-center gap-1">
+                    <input type="checkbox" id="autoUpgradeClick" onchange="updateAutoUpgradeSettings()">
+                    <span>Click</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <input type="checkbox" id="autoUpgradeEggValue" onchange="updateAutoUpgradeSettings()">
+                    <span>Egg Val</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <input type="checkbox" id="autoUpgradeAutoClick" onchange="updateAutoUpgradeSettings()">
+                    <span>Auto+</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <input type="checkbox" id="autoUpgradeLuck" onchange="updateAutoUpgradeSettings()">
+                    <span>Luck</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Shop Section -->
         <div class="bg-card/60 backdrop-blur rounded-2xl p-5 mb-6 border border-purple-500/20">
             <h2 class="text-xl font-bold mb-4 flex items-center gap-2">🏪 Toko</h2>
@@ -699,7 +732,14 @@ let state = {
     petLevels: {},    // { "🐶": 1 }
     petSkills: {},     // { "🐶": { offense: 0, defense: 0, utility: 0 } }
     masteryLevels: { egg: 0, coin: 0, pet: 0, event: 0 },
-    masteryXP: { egg: 0, coin: 0, pet: 0, event: 0 }
+    masteryXP: { egg: 0, coin: 0, pet: 0, event: 0 },
+    autoUpgrade: {
+        enabled: false,
+        click: false,
+        eggValue: false,
+        autoClick: false,
+        luck: false
+    }
 };
 
 function getXPForLevel(level) {
@@ -1813,6 +1853,30 @@ function closeMasteryModal() {
     document.getElementById('masteryModal').classList.add('hidden');
 }
 
+function toggleAutoUpgradeMaster() {
+    const toggle = document.getElementById('autoUpgradeMasterToggle');
+    state.autoUpgrade.enabled = toggle.checked;
+    updateAutoUpgradeUI();
+    showToast(state.autoUpgrade.enabled ? '⬆️ Auto-Upgrade ON' : '⬆️ Auto-Upgrade OFF');
+}
+
+function updateAutoUpgradeSettings() {
+    state.autoUpgrade.click = document.getElementById('autoUpgradeClick').checked;
+    state.autoUpgrade.eggValue = document.getElementById('autoUpgradeEggValue').checked;
+    state.autoUpgrade.autoClick = document.getElementById('autoUpgradeAutoClick').checked;
+    state.autoUpgrade.luck = document.getElementById('autoUpgradeLuck').checked;
+}
+
+function updateAutoUpgradeUI() {
+    document.getElementById('autoUpgradeMasterToggle').checked = state.autoUpgrade.enabled;
+    document.getElementById('autoUpgradeMasterStatus').textContent = state.autoUpgrade.enabled ? 'ON' : 'OFF';
+    document.getElementById('autoUpgradeMasterStatus').className = state.autoUpgrade.enabled ? 'text-sm font-semibold text-green-400' : 'text-sm font-semibold text-gray-400';
+    document.getElementById('autoUpgradeClick').checked = state.autoUpgrade.click;
+    document.getElementById('autoUpgradeEggValue').checked = state.autoUpgrade.eggValue;
+    document.getElementById('autoUpgradeAutoClick').checked = state.autoUpgrade.autoClick;
+    document.getElementById('autoUpgradeLuck').checked = state.autoUpgrade.luck;
+}
+
 // Game Loop
 let lastTick = Date.now();
 
@@ -1842,6 +1906,23 @@ function gameTick() {
     }
 
     checkEventExpiry();
+
+    // Auto-upgrade checks
+    if (state.autoUpgrade.enabled) {
+        if (state.autoUpgrade.click && state.coins >= getClickUpgradeCost()) {
+            upgradeClick();
+        }
+        if (state.autoUpgrade.eggValue && state.coins >= getEggValueUpgradeCost()) {
+            upgradeEggValue();
+        }
+        if (state.autoUpgrade.autoClick && state.coins >= getAutoClickUpgradeCost()) {
+            upgradeAutoClick();
+        }
+        if (state.autoUpgrade.luck && state.coins >= getLuckUpgradeCost()) {
+            upgradeLuck();
+        }
+    }
+
     updateUI();
     requestAnimationFrame(gameTick);
 }
@@ -1945,6 +2026,8 @@ function loadGame() {
         state.petSkills = state.petSkills || {};
         state.masteryLevels = state.masteryLevels || { egg: 0, coin: 0, pet: 0, event: 0 };
         state.masteryXP = state.masteryXP || { egg: 0, coin: 0, pet: 0, event: 0 };
+        state.autoUpgrade = state.autoUpgrade || { enabled: false, click: false, eggValue: false, autoClick: false, luck: false };
+        updateAutoUpgradeUI();
 
         // Sync auto-sell UI
         document.getElementById('autoSellToggle').checked = state.autoSell.enabled;
