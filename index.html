@@ -187,6 +187,15 @@
         </div>
     </div>
 
+    <!-- Pet Level Modal -->
+    <div id="levelModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4">⭐ Pet Level Details</h2>
+            <div id="levelPetList" class="space-y-3"></div>
+            <button onclick="closeLevelModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
     <!-- Pet Training Modal -->
     <div id="trainingModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
         <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4">
@@ -265,6 +274,7 @@
                 <button onclick="openSpinModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-yellow-600 transition-colors">🎰 Spin</button>
                 <button onclick="openQuestModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-green-600 transition-colors">📜 Quests</button>
                 <button onclick="openLeaderboardModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-blue-600 transition-colors">🏅 Ranks</button>
+                <button onclick="openLevelModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-blue-600 transition-colors">⭐ Levels</button>
                 <span id="eventBanner" class="hidden text-sm bg-pink-600 px-3 py-1 rounded-full">🎉 Spring Festival!</span>
             </div>
         </header>
@@ -412,6 +422,40 @@
                 </div>
             </div>
             <p class="text-xs text-gray-500 mt-2 text-center">Cooldown: <span id="chestCooldown">Ready!</span></p>
+        </div>
+
+        <!-- Auto-Sell Section -->
+        <div class="bg-card/60 backdrop-blur rounded-xl p-4 mb-6 border border-green-500/20">
+            <h3 class="font-bold mb-3 flex items-center gap-2">🤖 Auto-Sell</h3>
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="autoSellToggle" class="sr-only peer" onchange="toggleAutoSell()">
+                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                    <span class="text-sm font-semibold" id="autoSellStatus">OFF</span>
+                </div>
+                <span id="autoSellIndicator" class="text-xs text-gray-500"></span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                    <label class="text-xs text-gray-400">Threshold (min eggs)</label>
+                    <select id="autoSellThreshold" onchange="updateAutoSellSettings()" class="w-full bg-gray-700 rounded px-2 py-1 mt-1 text-sm">
+                        <option value="100">100</option>
+                        <option value="1000">1,000</option>
+                        <option value="10000">10,000</option>
+                        <option value="100000">100,000</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">Sell Tier</label>
+                    <select id="autoSellTier" onchange="updateAutoSellSettings()" class="w-full bg-gray-700 rounded px-2 py-1 mt-1 text-sm">
+                        <option value="basic">Basic (100→10🪙)</option>
+                        <option value="premium">Premium (1K→150🪙) [lvl 10+]</option>
+                        <option value="vip">VIP (10K→2K🪙) [lvl 25+]</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <!-- Shop Section -->
@@ -604,8 +648,29 @@ let state = {
     luckLevel: 0,
     luckBonus: 0,
     event: { active: false, startTime: 0, type: "" },
-    lastChestOpen: 0
+    lastChestOpen: 0,
+    autoSell: { enabled: false, threshold: 100, tier: 'basic' },
+    petXP: {},        // { "🐶": 0 }
+    petLevels: {}     // { "🐶": 1 }
 };
+
+function getXPForLevel(level) {
+    return Math.floor(100 * Math.pow(1.5, level - 1));
+}
+
+function addPetXP(pet, amount) {
+    if (!state.petXP[pet]) state.petXP[pet] = 0;
+    if (!state.petLevels[pet]) state.petLevels[pet] = 1;
+
+    state.petXP[pet] += amount;
+    const xpNeeded = getXPForLevel(state.petLevels[pet]);
+
+    while (state.petXP[pet] >= xpNeeded && state.petLevels[pet] < 100) {
+        state.petXP[pet] -= xpNeeded;
+        state.petLevels[pet]++;
+        showToast('⭐ ' + pet + ' leveled up to ' + state.petLevels[pet] + '!');
+    }
+}
 
 function formatNumber(n) {
     if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
@@ -662,6 +727,11 @@ function clickEgg() {
     egg.classList.add('shake');
     setTimeout(() => egg.classList.remove('shake'), 200);
     checkQuestProgress('click');
+    // Grant XP to random pet if player has any
+    if (state.pets.length > 0) {
+        const randomPet = state.pets[Math.floor(Math.random() * state.pets.length)];
+        addPetXP(randomPet, 1);
+    }
     checkAchievements();
     updateUI();
 }
@@ -733,6 +803,10 @@ function sellEggs() {
         showToast('❌ Butuh minimal 100 telur!');
         return;
     }
+    // Grant XP based on coins earned
+    state.pets.forEach(pet => {
+        addPetXP(pet, Math.floor(coinsEarned * 0.1));
+    });
     checkAchievements();
     updateUI();
 }
@@ -782,19 +856,6 @@ function tradePet(pet) {
 }
 
 function spawnPet() {
-    const available = PETS.filter(p => !state.pets.includes(p) || state.petCounts[p] < 3);
-    if (available.length > 0) {
-        const newPet = available[Math.floor(Math.random() * available.length)];
-        if (!state.pets.includes(newPet)) state.pets.push(newPet);
-        state.petCounts[newPet] = (state.petCounts[newPet] || 0) + 1;
-        showToast('🎉 Hewan baru: ' + newPet);
-        renderCollection();
-        updateTradeSection();
-        checkAchievements();
-    }
-}
-
-function spawnPet() {
     let pool = PETS;
     if (state.event.active) pool = [...PETS, ...SPRING_PETS];
     const available = pool.filter(p => !state.pets.includes(p) || state.petCounts[p] < 3);
@@ -803,7 +864,10 @@ function spawnPet() {
         if (!state.pets.includes(newPet)) state.pets.push(newPet);
         state.petCounts[newPet] = (state.petCounts[newPet] || 0) + 1;
         if (!state.petTraining[newPet]) state.petTraining[newPet] = { speed: 0, luck: 0, value: 0 };
+        if (!state.petLevels[newPet]) state.petLevels[newPet] = 1;
+        if (!state.petXP[newPet]) state.petXP[newPet] = 0;
         showToast('🎉 Hewan baru: ' + newPet);
+        addPetXP(newPet, 5); // Bonus XP for new pet
         checkQuestProgress('collectPet');
         renderCollection();
         updateTradeSection();
@@ -903,6 +967,39 @@ function openTrainingModal(pet) {
 }
 
 function closeTrainingModal() { document.getElementById('trainingModal').classList.add('hidden'); }
+
+function openLevelModal() {
+    const list = document.getElementById('levelPetList');
+    if (state.pets.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center">Belum punya pet!</p>';
+    } else {
+        list.innerHTML = state.pets.map(pet => {
+            const level = state.petLevels[pet] || 1;
+            const xp = state.petXP[pet] || 0;
+            const xpNeeded = getXPForLevel(level);
+            const pct = Math.min(100, Math.floor((xp / xpNeeded) * 100));
+            return `
+                <div class="bg-blue-900/30 rounded-lg p-3 flex items-center gap-3">
+                    <span class="text-3xl">${pet}${getEvolutionSuffix(state.petEvolution[pet] || 0)}</span>
+                    <div class="flex-1">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Level ${level}</span>
+                            <span>${xp}/${xpNeeded} XP</span>
+                        </div>
+                        <div class="quest-progress">
+                            <div class="quest-progress-bar" style="width:${pct}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    document.getElementById('levelModal').classList.remove('hidden');
+}
+
+function closeLevelModal() {
+    document.getElementById('levelModal').classList.add('hidden');
+}
 
 function trainStat(pet, stat) {
     const t = state.petTraining[pet] || { speed: 0, luck: 0, value: 0 };
@@ -1252,6 +1349,95 @@ function checkEventExpiry() {
     }
 }
 
+// ============== AUTO-SELL ==============
+function toggleAutoSell() {
+    const toggle = document.getElementById('autoSellToggle');
+    state.autoSell.enabled = toggle.checked;
+    updateAutoSellUI();
+    showToast(state.autoSell.enabled ? '🤖 Auto-Sell ON' : '🤖 Auto-Sell OFF');
+}
+
+function updateAutoSellSettings() {
+    state.autoSell.threshold = parseInt(document.getElementById('autoSellThreshold').value);
+    state.autoSell.tier = document.getElementById('autoSellTier').value;
+    updateAutoSellUI();
+}
+
+function updateAutoSellUI() {
+    const toggle = document.getElementById('autoSellToggle');
+    const status = document.getElementById('autoSellStatus');
+    const indicator = document.getElementById('autoSellIndicator');
+    toggle.checked = state.autoSell.enabled;
+    status.textContent = state.autoSell.enabled ? 'ON' : 'OFF';
+    status.className = state.autoSell.enabled ? 'text-sm font-semibold text-green-400' : 'text-sm font-semibold text-gray-400';
+
+    if (state.autoSell.enabled) {
+        const tierName = state.autoSell.tier === 'basic' ? 'Basic' : state.autoSell.tier === 'premium' ? 'Premium' : 'VIP';
+        indicator.textContent = `Sell ${formatNumber(state.autoSell.threshold)}+ eggs using ${tierName} tier`;
+    } else {
+        indicator.textContent = '';
+    }
+}
+
+function autoSellEggs() {
+    if (!state.autoSell.enabled) return;
+    if (state.eggs < state.autoSell.threshold) return;
+
+    const level = state.clickLevel;
+    const tier = state.autoSell.tier;
+
+    let sold = false;
+    let coinsEarned = 0;
+
+    if (tier === 'vip' && level >= 25 && state.eggs >= 10000) {
+        state.eggs -= 10000;
+        coinsEarned = 2000 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        sold = true;
+    } else if (tier === 'premium' && level >= 10 && state.eggs >= 1000) {
+        state.eggs -= 1000;
+        coinsEarned = 150 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        sold = true;
+    } else if (tier === 'basic' && state.eggs >= 100) {
+        state.eggs -= 100;
+        coinsEarned = 10 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        sold = true;
+    }
+
+    // Fallback to highest available tier if requested tier not available
+    if (!sold) {
+        if (state.eggs >= 10000 && level >= 25) {
+            state.eggs -= 10000;
+            coinsEarned = 2000 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+            state.coins += coinsEarned;
+            state.stats.totalCoinsEarned += coinsEarned;
+            sold = true;
+        } else if (state.eggs >= 1000 && level >= 10) {
+            state.eggs -= 1000;
+            coinsEarned = 150 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+            state.coins += coinsEarned;
+            state.stats.totalCoinsEarned += coinsEarned;
+            sold = true;
+        } else if (state.eggs >= 100) {
+            state.eggs -= 100;
+            coinsEarned = 10 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+            state.coins += coinsEarned;
+            state.stats.totalCoinsEarned += coinsEarned;
+            sold = true;
+        }
+    }
+
+    if (sold) {
+        checkQuestProgress('sellPremium');
+        checkQuestProgress('earnCoins', coinsEarned);
+    }
+}
+
 function doPrestige() {
     if (state.pets.length < 5) return;
     const newPP = state.prestige.points + 1;
@@ -1460,6 +1646,9 @@ function gameTick() {
         state.eggs += state.autoClickLevel * dt * (1 + state.eggValueLevel * 0.1);
     }
 
+    // Auto-sell
+    autoSellEggs();
+
     // Pet spawn with luck bonus
     if (state.owned.petCenter > 0) {
         const luckBonus = 1 + (state.luckLevel * 0.02) + (getTotalLuckBonus() * 0.01);
@@ -1527,6 +1716,7 @@ function renderCollection() {
             ${acc ? '<span class="text-lg absolute -top-1 -right-1">' + acc + '</span>' : ''}
             ${state.petCounts[pet] > 1 ? `<span class="text-xs bg-red-500 rounded-full px-1">x${state.petCounts[pet]}</span>` : ''}
             ${Object.values(state.petTraining[pet] || {}).some(v => v > 0) ? '<span class="text-xs text-yellow-400">★</span>' : ''}
+            ${state.petLevels[pet] ? '<span class="text-xs bg-blue-600 rounded-full px-1">Lv' + state.petLevels[pet] + '</span>' : ''}
         </div>
     `}).join('');
 }
@@ -1558,6 +1748,15 @@ function loadGame() {
         state.event = state.event || { active: false, startTime: 0, type: "" };
         state.lastChestOpen = state.lastChestOpen || 0;
         state.lastQuestReset = state.lastQuestReset || 0;
+        state.autoSell = state.autoSell || { enabled: false, threshold: 100, tier: 'basic' };
+        state.petXP = state.petXP || {};
+        state.petLevels = state.petLevels || {};
+
+        // Sync auto-sell UI
+        document.getElementById('autoSellToggle').checked = state.autoSell.enabled;
+        document.getElementById('autoSellThreshold').value = state.autoSell.threshold;
+        document.getElementById('autoSellTier').value = state.autoSell.tier;
+        updateAutoSellUI();
 
         // Offline progress
         const offlineSecs = (Date.now() - state.lastSave) / 1000;
