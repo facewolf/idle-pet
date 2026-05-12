@@ -262,6 +262,16 @@
         </div>
     </div>
 
+    <!-- Mastery Modal -->
+    <div id="masteryModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-card/90 backdrop-blur rounded-2xl p-8 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4">🏆 Mastery Tracks</h2>
+            <p class="text-gray-400 text-sm mb-4">Masteries persist through prestige resets!</p>
+            <div id="masteryList" class="space-y-3"></div>
+            <button onclick="closeMasteryModal()" class="mt-4 bg-purple-600 px-6 py-2 rounded-lg w-full">Tutup</button>
+        </div>
+    </div>
+
     <div class="container mx-auto px-4 py-6 max-w-6xl">
         <!-- Header -->
         <header class="text-center mb-4">
@@ -275,6 +285,7 @@
                 <button onclick="openQuestModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-green-600 transition-colors">📜 Quests</button>
                 <button onclick="openLeaderboardModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-blue-600 transition-colors">🏅 Ranks</button>
                 <button onclick="openLevelModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-blue-600 transition-colors">⭐ Levels</button>
+                <button onclick="openMasteryModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-yellow-600 transition-colors">🏆 Mastery</button>
                 <span id="eventBanner" class="hidden text-sm bg-pink-600 px-3 py-1 rounded-full">🎉 Spring Festival!</span>
             </div>
         </header>
@@ -650,6 +661,13 @@ const CHEST_REWARDS = {
     golden: { eggs: [1000, 5000], coinChance: 0.5, coinAmount: [200, 1000], rareChance: 0.15 }
 };
 
+const MASTERY_TRACKS = {
+    egg: { name: '🥚 Egg Mastery', desc: 'Master egg collection', color: 'purple', xpPerLevel: [100, 150, 200, 250, 300] },
+    coin: { name: '🪙 Coin Mastery', desc: 'Master coin earning', color: 'yellow', xpPerLevel: [100, 150, 200, 250, 300] },
+    pet: { name: '🐾 Pet Mastery', desc: 'Master pet collection', color: 'green', xpPerLevel: [100, 150, 200, 250, 300] },
+    event: { name: '🎉 Event Mastery', desc: 'Master events', color: 'pink', xpPerLevel: [100, 150, 200, 250, 300] }
+};
+
 let state = {
     eggs: 0, coins: 0, pets: [], petCounts: {},
     owned: { incubator: 0, hatchery: 0, petCenter: 0 },
@@ -679,11 +697,60 @@ let state = {
     autoSell: { enabled: false, threshold: 100, tier: 'basic' },
     petXP: {},        // { "🐶": 0 }
     petLevels: {},    // { "🐶": 1 }
-    petSkills: {}     // { "🐶": { offense: 0, defense: 0, utility: 0 } }
+    petSkills: {},     // { "🐶": { offense: 0, defense: 0, utility: 0 } }
+    masteryLevels: { egg: 0, coin: 0, pet: 0, event: 0 },
+    masteryXP: { egg: 0, coin: 0, pet: 0, event: 0 }
 };
 
 function getXPForLevel(level) {
     return Math.floor(100 * Math.pow(1.5, level - 1));
+}
+
+function getMasteryXPNeeded(category, level) {
+    const base = MASTERY_TRACKS[category].xpPerLevel[Math.min(level, 4)];
+    return Math.floor(base * Math.pow(1.5, level));
+}
+
+function addMasteryXP(category, amount) {
+    if (!state.masteryXP[category]) state.masteryXP[category] = 0;
+    if (!state.masteryLevels[category]) state.masteryLevels[category] = 0;
+
+    state.masteryXP[category] += amount;
+    const xpNeeded = getMasteryXPNeeded(category, state.masteryLevels[category]);
+
+    while (state.masteryXP[category] >= xpNeeded && state.masteryLevels[category] < 50) {
+        state.masteryXP[category] -= xpNeeded;
+        state.masteryLevels[category]++;
+        showToast('🏆 ' + MASTERY_TRACKS[category].name + ' - Level ' + state.masteryLevels[category] + '!');
+        applyMasteryBonus(category);
+    }
+}
+
+function applyMasteryBonus(category) {
+    const level = state.masteryLevels[category];
+    if (level % 5 === 0) {
+        switch(category) {
+            case 'egg':
+                state.eggValueBonus += 5;
+                showToast('🥚 Egg Mastery bonus: +5% egg value!');
+                break;
+            case 'coin':
+                break;
+            case 'pet':
+                break;
+            case 'event':
+                break;
+        }
+    }
+}
+
+function getMasteryBonus(category) {
+    const level = state.masteryLevels[category] || 0;
+    if (category === 'egg') return level * 2;
+    if (category === 'coin') return level * 1;
+    if (category === 'pet') return level * 1;
+    if (category === 'event') return level * 2;
+    return 0;
 }
 
 function addPetXP(pet, amount) {
@@ -761,6 +828,7 @@ function clickEgg() {
         addPetXP(randomPet, 1);
     }
     checkAchievements();
+    addMasteryXP('egg', 1);
     updateUI();
 }
 
@@ -835,6 +903,7 @@ function sellEggs() {
     state.pets.forEach(pet => {
         addPetXP(pet, Math.floor(coinsEarned * 0.1));
     });
+    addMasteryXP('coin', Math.floor(coinsEarned * 0.2));
     checkAchievements();
     updateUI();
 }
@@ -897,6 +966,7 @@ function spawnPet() {
         if (!state.petSkills[newPet]) state.petSkills[newPet] = { offense: 0, defense: 0, utility: 0 };
         showToast('🎉 Hewan baru: ' + newPet);
         addPetXP(newPet, 5); // Bonus XP for new pet
+        addMasteryXP('pet', 5);
         checkQuestProgress('collectPet');
         renderCollection();
         updateTradeSection();
@@ -1401,6 +1471,7 @@ function toggleEvent() {
         document.getElementById('eventBanner').classList.remove('hidden');
         document.getElementById('eventBtn').classList.add('hidden');
         showToast('🎉 Spring Festival Activated! 2x rewards!');
+        addMasteryXP('event', 50);
     } else {
         state.event.active = false;
         document.getElementById('eventBanner').classList.add('hidden');
@@ -1701,6 +1772,42 @@ function closeAchModal() {
     document.getElementById('achModal').classList.add('hidden');
 }
 
+function openMasteryModal() {
+    const list = document.getElementById('masteryList');
+    list.innerHTML = Object.entries(MASTERY_TRACKS).map(([key, track]) => {
+        const level = state.masteryLevels[key] || 0;
+        const xp = state.masteryXP[key] || 0;
+        const xpNeeded = getMasteryXPNeeded(key, level);
+        const pct = Math.min(100, Math.floor((xp / xpNeeded) * 100));
+        const bonus = getMasteryBonus(key);
+
+        return `
+            <div class="bg-${track.color}-900/30 rounded-xl p-4 border border-${track.color}-500/30">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="text-3xl">${track.name.split(' ')[0]}</span>
+                    <div class="flex-1">
+                        <p class="font-bold">${track.name.split(' ').slice(1).join(' ')}</p>
+                        <p class="text-xs text-gray-400">${track.desc}</p>
+                    </div>
+                    <span class="text-2xl font-bold text-${track.color}-300">Lv ${level}</span>
+                </div>
+                <div class="quest-progress mb-2">
+                    <div class="quest-progress-bar" style="width:${pct}%"></div>
+                </div>
+                <div class="flex justify-between text-xs">
+                    <span>${xp}/${xpNeeded} XP</span>
+                    <span class="text-${track.color}-400">+${bonus}% bonus</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+    document.getElementById('masteryModal').classList.remove('hidden');
+}
+
+function closeMasteryModal() {
+    document.getElementById('masteryModal').classList.add('hidden');
+}
+
 // Game Loop
 let lastTick = Date.now();
 
@@ -1831,6 +1938,8 @@ function loadGame() {
         state.petXP = state.petXP || {};
         state.petLevels = state.petLevels || {};
         state.petSkills = state.petSkills || {};
+        state.masteryLevels = state.masteryLevels || { egg: 0, coin: 0, pet: 0, event: 0 };
+        state.masteryXP = state.masteryXP || { egg: 0, coin: 0, pet: 0, event: 0 };
 
         // Sync auto-sell UI
         document.getElementById('autoSellToggle').checked = state.autoSell.enabled;
