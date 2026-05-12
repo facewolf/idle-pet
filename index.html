@@ -741,7 +741,9 @@ let state = {
         autoClick: false,
         luck: false
     },
-    quickSell: { active: false, interval: null, count: 0 }
+    quickSell: { active: false, interval: null, count: 0 },
+    selectedPets: [],
+    batchMode: false
 };
 
 function getXPForLevel(level) {
@@ -961,13 +963,27 @@ function checkSellTiers() {
 function updateTradeSection() {
     const duplicates = Object.entries(state.petCounts).filter(([p, c]) => c > 1);
     const section = document.getElementById('tradeSection');
-    
-    if (duplicates.length === 0) {
+
+    const batchButtons = state.selectedPets.length > 0 ? `
+        <div class="mb-3 flex justify-center gap-2">
+            <button onclick="tradeSelectedPets()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded text-sm">
+                Trade ${state.selectedPets.length} Pets
+            </button>
+            <button onclick="fuseSelectedPets()" class="bg-orange-600 hover:bg-orange-500 px-4 py-2 rounded text-sm">
+                Fuse ${state.selectedPets.length} Pets
+            </button>
+            <button onclick="clearPetSelection()" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded text-sm">
+                Clear
+            </button>
+        </div>
+    ` : '';
+
+    if (duplicates.length === 0 && state.selectedPets.length === 0) {
         section.innerHTML = '<p class="text-gray-500">Tidak ada duplikat</p>';
         return;
     }
-    
-    section.innerHTML = duplicates.map(([pet, count]) => `
+
+    section.innerHTML = batchButtons + duplicates.map(([pet, count]) => `
         <div class="flex items-center justify-between bg-cyan-900/30 rounded-lg p-2 mb-2">
             <span class="text-2xl">${pet}</span>
             <span class="text-sm text-gray-400">x${count}</span>
@@ -1185,6 +1201,38 @@ function closeLevelModal() {
     document.getElementById('levelModal').classList.add('hidden');
 }
 
+function handlePetClick(pet, event) {
+    if (event.shiftKey && state.selectedPets.length > 0) {
+        // Range select - select all pets between last selected and this one
+        const lastSelected = state.selectedPets[state.selectedPets.length - 1];
+        const lastIndex = state.pets.indexOf(lastSelected);
+        const currentIndex = state.pets.indexOf(pet);
+        const start = Math.min(lastIndex, currentIndex);
+        const end = Math.max(lastIndex, currentIndex);
+        for (let i = start; i <= end; i++) {
+            if (!state.selectedPets.includes(state.pets[i])) {
+                state.selectedPets.push(state.pets[i]);
+            }
+        }
+    } else if (event.ctrlKey || event.metaKey) {
+        // Toggle selection
+        if (state.selectedPets.includes(pet)) {
+            state.selectedPets = state.selectedPets.filter(p => p !== pet);
+        } else {
+            state.selectedPets.push(pet);
+        }
+    } else {
+        // Normal click - open training modal (existing behavior)
+        openTrainingModal(pet);
+    }
+    renderCollection();
+}
+
+function clearPetSelection() {
+    state.selectedPets = [];
+    renderCollection();
+}
+
 function trainStat(pet, stat) {
     const t = state.petTraining[pet] || { speed: 0, luck: 0, value: 0 };
     const cost = 50 * (t[stat] + 1);
@@ -1250,6 +1298,56 @@ function fusePet(pet) {
     renderCollection();
     updateTradeSection();
     checkAchievements();
+}
+
+function tradeSelectedPets() {
+    let totalCoins = 0;
+    let tradedCount = 0;
+    state.selectedPets.forEach(pet => {
+        if (state.petCounts[pet] > 1) {
+            const tradeValue = 25;
+            state.petCounts[pet]--;
+            totalCoins += tradeValue;
+            tradedCount++;
+            if (state.petCounts[pet] === 0) {
+                state.pets = state.pets.filter(p => p !== pet);
+            }
+        }
+    });
+    if (tradedCount > 0) {
+        state.coins += totalCoins;
+        state.stats.totalCoinsEarned += totalCoins;
+        showToast('🔄 Traded ' + tradedCount + ' pets for ' + totalCoins + ' 🪙');
+    }
+    state.selectedPets = [];
+    updateTradeSection();
+    renderCollection();
+    updateUI();
+}
+
+function fuseSelectedPets() {
+    let fused = 0;
+    state.selectedPets.forEach(pet => {
+        if (state.petCounts[pet] >= 2) {
+            const evoLevel = state.petEvolution[pet] || 0;
+            if (evoLevel < 3) {
+                state.petCounts[pet] -= 2;
+                state.petEvolution[pet] = evoLevel + 1;
+                if (state.petCounts[pet] === 0) {
+                    state.pets = state.pets.filter(p => p !== pet);
+                    delete state.petCounts[pet];
+                }
+                fused++;
+            }
+        }
+    });
+    if (fused > 0) {
+        showToast('🔥 Fused ' + fused + ' pets!');
+        updateFusionSection();
+        renderCollection();
+        updateUI();
+    }
+    state.selectedPets = [];
 }
 
 function closeFusionModal() { document.getElementById('fusionModal').classList.add('hidden'); }
@@ -2045,7 +2143,8 @@ function renderCollection() {
         const acc = state.petAccessory[pet] || '';
         const borderClass = getEvolutionBorder(evoLevel);
         return `
-        <div onclick="openTrainingModal('${pet}')" class="pet-card slide-in cursor-pointer bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-2 text-center border ${borderClass} relative ${i % 3 === 0 ? 'pet-bounce' : ''}" style="animation-delay: ${i * 50}ms">
+        <div onclick="handlePetClick('${pet}', event)" class="pet-card slide-in cursor-pointer bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-2 text-center border ${borderClass} relative ${state.selectedPets.includes(pet) ? 'ring-2 ring-yellow-400 ring-offset-2' : ''} ${i % 3 === 0 ? 'pet-bounce' : ''}" style="animation-delay: ${i * 50}ms">
+            ${state.selectedPets.includes(pet) ? '<span class="absolute top-0 right-0 bg-yellow-400 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center">✓</span>' : ''}
             <span class="text-3xl">${pet}${getEvolutionSuffix(evoLevel)}</span>
             ${acc ? '<span class="text-lg absolute -top-1 -right-1">' + acc + '</span>' : ''}
             ${state.petCounts[pet] > 1 ? `<span class="text-xs bg-red-500 rounded-full px-1">x${state.petCounts[pet]}</span>` : ''}
@@ -2097,6 +2196,8 @@ function loadGame() {
         state.masteryXP = state.masteryXP || { egg: 0, coin: 0, pet: 0, event: 0 };
         state.autoUpgrade = state.autoUpgrade || { enabled: false, click: false, eggValue: false, autoClick: false, luck: false };
         state.quickSell = state.quickSell || { active: false, interval: null, count: 0 };
+        state.selectedPets = state.selectedPets || [];
+        state.batchMode = state.batchMode || false;
         updateAutoUpgradeUI();
 
         // Sync auto-sell UI
