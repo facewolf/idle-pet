@@ -607,6 +607,33 @@ const ACCESSORIES = [
     { id: '🔮', name: 'Crystal', cost: 350 }
 ];
 
+const SKILL_BRANCHES = {
+    offense: {
+        name: '⚔️ Offense',
+        skills: [
+            { id: 'clickPower', name: 'Click Power', desc: '+5% click power per level', icon: '👊', cost: 100 },
+            { id: 'eggValue', name: 'Egg Value', desc: '+5% egg value per level', icon: '🥚', cost: 120 },
+            { id: 'critChance', name: 'Critical', desc: '+1% crit chance per level', icon: '💥', cost: 150 }
+        ]
+    },
+    defense: {
+        name: '🛡️ Defense',
+        skills: [
+            { id: 'autoSellEff', name: 'Auto-Sell', desc: '+5% auto-sell efficiency', icon: '🤖', cost: 100 },
+            { id: 'luck', name: 'Luck', desc: '+2% luck per level', icon: '🍀', cost: 130 },
+            { id: 'badLuckProt', name: 'Bad Luck Prot', desc: '-1% bad luck chance', icon: '🧲', cost: 140 }
+        ]
+    },
+    utility: {
+        name: '🔧 Utility',
+        skills: [
+            { id: 'spawnRate', name: 'Spawn Rate', desc: '+3% pet spawn rate', icon: '🐾', cost: 110 },
+            { id: 'offlineEff', name: 'Offline Eff', desc: '+5% offline efficiency', icon: '🌙', cost: 100 },
+            { id: 'dailyBonus', name: 'Daily Bonus', desc: '+5% daily reward', icon: '🎁', cost: 130 }
+        ]
+    }
+};
+
 const QUEST_TEMPLATES = [
     { type: 'click', desc: 'Klik {n} kali', targets: [100, 250, 500, 1000], reward: [50, 100, 200, 400] },
     { type: 'sellPremium', desc: 'Jual {n} telur tier Premium', targets: [5, 10, 20], reward: [100, 200, 400] },
@@ -651,7 +678,8 @@ let state = {
     lastChestOpen: 0,
     autoSell: { enabled: false, threshold: 100, tier: 'basic' },
     petXP: {},        // { "🐶": 0 }
-    petLevels: {}     // { "🐶": 1 }
+    petLevels: {},    // { "🐶": 1 }
+    petSkills: {}     // { "🐶": { offense: 0, defense: 0, utility: 0 } }
 };
 
 function getXPForLevel(level) {
@@ -866,6 +894,7 @@ function spawnPet() {
         if (!state.petTraining[newPet]) state.petTraining[newPet] = { speed: 0, luck: 0, value: 0 };
         if (!state.petLevels[newPet]) state.petLevels[newPet] = 1;
         if (!state.petXP[newPet]) state.petXP[newPet] = 0;
+        if (!state.petSkills[newPet]) state.petSkills[newPet] = { offense: 0, defense: 0, utility: 0 };
         showToast('🎉 Hewan baru: ' + newPet);
         addPetXP(newPet, 5); // Bonus XP for new pet
         checkQuestProgress('collectPet');
@@ -962,11 +991,54 @@ function openTrainingModal(pet) {
                 </button>
             </div>
         </div>
+        ${(() => {
+            const skills = state.petSkills[pet] || { offense: 0, defense: 0, utility: 0 };
+            const skillsContent = `
+                <div class="mt-4 pt-4 border-t border-gray-600">
+                    <h4 class="font-bold mb-3">⚔️ Skill Tree</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        ${['offense', 'defense', 'utility'].map(branch => {
+                            const branchData = SKILL_BRANCHES[branch];
+                            const level = skills[branch] || 0;
+                            const cost = 200 * (level + 1);
+                            const colors = { offense: 'orange', defense: 'blue', utility: 'green' };
+                            const color = colors[branch];
+                            return `
+                                <div class="bg-${color}-900/30 rounded-lg p-2 text-center">
+                                    <p class="text-sm font-bold">${branchData.name.split(' ')[1]}</p>
+                                    <p class="text-xs text-gray-400">Lv ${level}/3</p>
+                                    <button onclick="upgradePetSkillBranch('${pet}', '${branch}')" class="mt-1 bg-${color}-600 hover:bg-${color}-500 px-2 py-1 rounded text-xs" ${level >= 3 || state.coins < cost ? 'disabled' : ''}>
+                                        🪙 ${cost}
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            return skillsContent;
+        })()}
     `;
     document.getElementById('trainingModal').classList.remove('hidden');
 }
 
 function closeTrainingModal() { document.getElementById('trainingModal').classList.add('hidden'); }
+
+function upgradePetSkillBranch(pet, branch) {
+    const skills = state.petSkills[pet] || { offense: 0, defense: 0, utility: 0 };
+    const level = skills[branch] || 0;
+    const cost = 200 * (level + 1);
+
+    if (level >= 3 || state.coins < cost) return;
+
+    state.coins -= cost;
+    skills[branch] = level + 1;
+    state.petSkills[pet] = skills;
+
+    showToast('⚔️ ' + pet + ' ' + SKILL_BRANCHES[branch].name + ' skill upgraded to Lv' + (level + 1) + '!');
+    openTrainingModal(pet);
+    updateUI();
+}
 
 function openLevelModal() {
     const list = document.getElementById('levelPetList');
@@ -1751,6 +1823,7 @@ function loadGame() {
         state.autoSell = state.autoSell || { enabled: false, threshold: 100, tier: 'basic' };
         state.petXP = state.petXP || {};
         state.petLevels = state.petLevels || {};
+        state.petSkills = state.petSkills || {};
 
         // Sync auto-sell UI
         document.getElementById('autoSellToggle').checked = state.autoSell.enabled;
