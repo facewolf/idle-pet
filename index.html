@@ -288,6 +288,7 @@
                 <button onclick="openMasteryModal()" class="text-sm bg-card/50 px-3 py-1 rounded-full hover:bg-yellow-600 transition-colors">🏆 Mastery</button>
                 <span id="eventBanner" class="hidden text-sm bg-pink-600 px-3 py-1 rounded-full">🎉 Spring Festival!</span>
             </div>
+            <p class="text-xs text-gray-500 mt-2">Keys: 1=Click, 2=Spin, 3=Daily, 4=Sell, Esc=Close</p>
         </header>
 
         <!-- Resource Display -->
@@ -2139,6 +2140,36 @@ function loadGame() {
 }
 
 setInterval(saveGame, 30000);
+
+document.addEventListener('keydown', handleKeyboardShortcuts);
+
+function handleKeyboardShortcuts(e) {
+    // Ignore if typing in input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    switch(e.key) {
+        case '1':
+            clickEgg();
+            break;
+        case '2':
+            openSpinModal();
+            break;
+        case '3':
+            checkDailyReward();
+            break;
+        case '4':
+            sellEggs();
+            break;
+        case 'Escape':
+            // Close any open modal
+            document.querySelectorAll('.fixed.inset-0').forEach(modal => {
+                if (!modal.classList.contains('hidden')) {
+                    modal.classList.add('hidden');
+                }
+            });
+            break;
+    }
+}
 
 // Init
 document.getElementById('mainEgg').addEventListener('click', clickEgg);
