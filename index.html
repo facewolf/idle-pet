@@ -308,7 +308,7 @@
                 <div class="text-xs text-gray-400">Hewan</div>
             </div>
             <div class="bg-card/80 backdrop-blur rounded-xl p-3 text-center border border-red-500/30 flex flex-col items-center justify-center">
-                <button onclick="sellEggs()" class="text-2xl mb-1">🏪</button>
+                <button id="quickSellBtn" onmousedown="startQuickSell()" onmouseup="stopQuickSell()" onmouseleave="stopQuickSell()" class="text-2xl mb-1">🏪</button>
                 <div id="sellStatus" class="text-xs font-semibold text-red-300">100 🥚 → 10 🪙</div>
             </div>
         </div>
@@ -739,7 +739,8 @@ let state = {
         eggValue: false,
         autoClick: false,
         luck: false
-    }
+    },
+    quickSell: { active: false, interval: null, count: 0 }
 };
 
 function getXPForLevel(level) {
@@ -1853,6 +1854,73 @@ function closeMasteryModal() {
     document.getElementById('masteryModal').classList.add('hidden');
 }
 
+function startQuickSell() {
+    if (state.quickSell.active) return;
+    state.quickSell.active = true;
+    state.quickSell.count = 0;
+    state.quickSell.interval = setInterval(() => {
+        if (state.eggs >= 100) {
+            const originalCoins = state.coins;
+            sellEggsSilent();
+            state.quickSell.count++;
+            if (state.quickSell.count % 10 === 0) {
+                const coinsEarned = state.coins - originalCoins;
+                showToastQuickSell(state.quickSell.count, coinsEarned);
+            }
+        } else {
+            stopQuickSell();
+            if (state.quickSell.count > 0) {
+                showToast('🏪 Quick Sell: ' + state.quickSell.count + ' batches sold!');
+            }
+        }
+    }, 200);
+}
+
+function stopQuickSell() {
+    if (state.quickSell.interval) {
+        clearInterval(state.quickSell.interval);
+        state.quickSell.interval = null;
+    }
+    state.quickSell.active = false;
+}
+
+function sellEggsSilent() {
+    const level = state.clickLevel;
+    let coinsEarned = 0;
+    if (state.eggs >= 10000 && level >= 25) {
+        state.eggs -= 10000;
+        coinsEarned = 2000 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        state.pets.forEach(pet => addPetXP(pet, Math.floor(coinsEarned * 0.1)));
+        addMasteryXP('coin', Math.floor(coinsEarned * 0.2));
+    } else if (state.eggs >= 1000 && level >= 10) {
+        state.eggs -= 1000;
+        coinsEarned = 150 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        state.pets.forEach(pet => addPetXP(pet, Math.floor(coinsEarned * 0.1)));
+        addMasteryXP('coin', Math.floor(coinsEarned * 0.2));
+    } else if (state.eggs >= 100) {
+        state.eggs -= 100;
+        coinsEarned = 10 * (1 + state.eggValueLevel * 0.1) * (state.event.active ? 2 : 1);
+        state.coins += coinsEarned;
+        state.stats.totalCoinsEarned += coinsEarned;
+        state.pets.forEach(pet => addPetXP(pet, Math.floor(coinsEarned * 0.1)));
+        addMasteryXP('coin', Math.floor(coinsEarned * 0.2));
+    }
+    checkQuestProgress('sellPremium');
+    checkQuestProgress('earnCoins', coinsEarned);
+    return coinsEarned;
+}
+
+function showToastQuickSell(count, coins) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastText').textContent = 'Sold x' + count + ' (+' + Math.floor(coins) + ' 🪙)';
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 500);
+}
+
 function toggleAutoUpgradeMaster() {
     const toggle = document.getElementById('autoUpgradeMasterToggle');
     state.autoUpgrade.enabled = toggle.checked;
@@ -2027,6 +2095,7 @@ function loadGame() {
         state.masteryLevels = state.masteryLevels || { egg: 0, coin: 0, pet: 0, event: 0 };
         state.masteryXP = state.masteryXP || { egg: 0, coin: 0, pet: 0, event: 0 };
         state.autoUpgrade = state.autoUpgrade || { enabled: false, click: false, eggValue: false, autoClick: false, luck: false };
+        state.quickSell = state.quickSell || { active: false, interval: null, count: 0 };
         updateAutoUpgradeUI();
 
         // Sync auto-sell UI
